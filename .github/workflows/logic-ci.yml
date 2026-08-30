@@ -27,8 +27,6 @@ jobs:
             --rosdistro jazzy \
             -r \
             -y
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends python3-pytest
       - name: Build and run repository checks
         shell: bash
         run: bash scripts/run_checks.sh
