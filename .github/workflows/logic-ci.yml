@@ -1,0 +1,33 @@
+name: Logic CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    container:
+      image: ghcr.io/ros-tooling/setup-ros-docker/setup-ros-docker-ubuntu-noble-ros-jazzy-ros-base
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install declared workspace dependencies
+        shell: bash
+        run: |
+          apt-get update
+          rosdep update
+          rosdep install \
+            --from-paths src \
+            --ignore-src \
+            --rosdistro jazzy \
+            -r \
+            -y
+          apt-get install -y --no-install-recommends python3-pytest
+          rm -rf /var/lib/apt/lists/*
+      - name: Build and run repository checks
+        shell: bash
+        run: bash scripts/run_checks.sh

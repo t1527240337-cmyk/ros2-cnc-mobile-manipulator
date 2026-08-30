@@ -1,0 +1,8 @@
+bool include_terminal
+---
+factory_interfaces/RobotTaskState[] tasks
+uint32 pending_count
+uint32 active_count
+uint32 terminal_count
+string persistence_path
+string message

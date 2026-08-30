@@ -1,0 +1,7 @@
+---
+factory_interfaces/MachineState[] machines
+uint32 raw_part_count
+uint32 finished_part_count
+sensor_msgs/BatteryState battery
+string held_part_id
+string active_order_id

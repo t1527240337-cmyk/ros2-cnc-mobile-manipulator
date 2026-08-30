@@ -1,0 +1,6 @@
+string text
+---
+bool accepted
+string order_id
+string parser
+string message

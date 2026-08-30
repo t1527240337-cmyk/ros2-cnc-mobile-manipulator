@@ -1,0 +1,68 @@
+joint_limits:
+  arm_shoulder_pan_joint:
+    # Match the UR5e model's physical two-turn range. Keep a margin from
+    # the +/- 2*pi hard stops so an unwrapped controller state remains valid
+    # without allowing a trajectory to command the exact Gazebo boundary.
+    has_position_limits: true
+    min_position: -6.10
+    max_position: 6.10
+    has_velocity_limits: true
+    max_velocity: 1.5
+    has_acceleration_limits: true
+    max_acceleration: 2.5
+  arm_shoulder_lift_joint:
+    # Match the UR5e two-turn range; see arm_shoulder_pan_joint above.
+    has_position_limits: true
+    min_position: -6.10
+    max_position: 6.10
+    has_velocity_limits: true
+    max_velocity: 1.5
+    has_acceleration_limits: true
+    max_acceleration: 2.5
+  arm_elbow_joint:
+    # The upstream UR5e model defines the elbow as a single-turn joint.
+    has_position_limits: true
+    min_position: -3.141592653589793
+    max_position: 3.141592653589793
+    has_velocity_limits: true
+    max_velocity: 1.5
+    has_acceleration_limits: true
+    max_acceleration: 2.5
+  arm_wrist_1_joint:
+    # Gazebo and ros2_control report valid UR wrist angles unwrapped. A
+    # +/- pi override made those states invalid after a pose-planned carry.
+    has_position_limits: true
+    min_position: -6.10
+    max_position: 6.10
+    has_velocity_limits: true
+    max_velocity: 2.0
+    has_acceleration_limits: true
+    max_acceleration: 3.0
+  arm_wrist_2_joint:
+    # Match the UR5e two-turn range; see arm_wrist_1_joint above.
+    has_position_limits: true
+    min_position: -6.10
+    max_position: 6.10
+    has_velocity_limits: true
+    max_velocity: 2.0
+    has_acceleration_limits: true
+    max_acceleration: 3.0
+  arm_wrist_3_joint:
+    # Match the UR5e two-turn range; see arm_wrist_1_joint above.
+    has_position_limits: true
+    min_position: -6.10
+    max_position: 6.10
+    has_velocity_limits: true
+    max_velocity: 2.0
+    has_acceleration_limits: true
+    max_acceleration: 3.0
+  gripper_left_finger_joint:
+    has_velocity_limits: true
+    max_velocity: 0.08
+    has_acceleration_limits: true
+    max_acceleration: 0.30
+  gripper_right_finger_joint:
+    has_velocity_limits: true
+    max_velocity: 0.08
+    has_acceleration_limits: true
+    max_acceleration: 0.30

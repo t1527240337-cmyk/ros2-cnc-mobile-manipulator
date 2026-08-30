@@ -1,0 +1,248 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="cnc_machine">
+    <static>false</static>
+    <self_collide>false</self_collide>
+
+    <!-- The enclosure is dynamic only so its door can move. This joint keeps
+         the cabinet rigidly attached to the factory floor. -->
+    <joint name="cabinet_world_joint" type="fixed">
+      <parent>world</parent>
+      <child>cabinet</child>
+    </joint>
+
+    <link name="cabinet">
+      <inertial>
+        <pose>0 0 1.05 0 0 0</pose>
+        <mass>850</mass>
+        <inertia>
+          <ixx>240</ixx><iyy>280</iyy><izz>310</izz>
+        </inertia>
+      </inertial>
+
+      <!-- Base cabinet and machine feet. -->
+      <collision name="base_collision">
+        <pose>0 0 0.35 0 0 0</pose>
+        <geometry><box><size>1.80 1.55 0.70</size></box></geometry>
+      </collision>
+      <visual name="base_visual">
+        <pose>0 0 0.35 0 0 0</pose>
+        <geometry><box><size>1.80 1.55 0.70</size></box></geometry>
+        <material><ambient>0.12 0.16 0.19 1</ambient><diffuse>0.16 0.21 0.24 1</diffuse><specular>0.35 0.35 0.35 1</specular></material>
+      </visual>
+      <visual name="lower_access_panel">
+        <pose>-0.906 0 0.33 0 0 0</pose>
+        <geometry><box><size>0.015 1.18 0.48</size></box></geometry>
+        <material><diffuse>0.26 0.31 0.34 1</diffuse></material>
+      </visual>
+      <visual name="panel_handle">
+        <pose>-0.92 -0.44 0.34 0 0 0</pose>
+        <geometry><box><size>0.035 0.16 0.035</size></box></geometry>
+        <material><diffuse>0.04 0.04 0.04 1</diffuse></material>
+      </visual>
+
+      <!-- Rear and side enclosure leave a genuine front opening. -->
+      <collision name="rear_collision">
+        <pose>0.84 0 1.45 0 0 0</pose>
+        <geometry><box><size>0.12 1.55 1.50</size></box></geometry>
+      </collision>
+      <visual name="rear_visual">
+        <pose>0.84 0 1.45 0 0 0</pose>
+        <geometry><box><size>0.12 1.55 1.50</size></box></geometry>
+        <material><diffuse>0.52 0.57 0.60 1</diffuse></material>
+      </visual>
+      <collision name="left_wall_collision">
+        <pose>0 0.715 1.45 0 0 0</pose>
+        <geometry><box><size>1.80 0.12 1.50</size></box></geometry>
+      </collision>
+      <visual name="left_wall_visual">
+        <pose>0 0.715 1.45 0 0 0</pose>
+        <geometry><box><size>1.80 0.12 1.50</size></box></geometry>
+        <material><diffuse>0.62 0.66 0.68 1</diffuse></material>
+      </visual>
+      <collision name="right_wall_collision">
+        <pose>0 -0.715 1.45 0 0 0</pose>
+        <geometry><box><size>1.80 0.12 1.50</size></box></geometry>
+      </collision>
+      <visual name="right_wall_visual">
+        <pose>0 -0.715 1.45 0 0 0</pose>
+        <geometry><box><size>1.80 0.12 1.50</size></box></geometry>
+        <material><diffuse>0.62 0.66 0.68 1</diffuse></material>
+      </visual>
+      <collision name="roof_collision">
+        <pose>0 0 2.23 0 0 0</pose>
+        <geometry><box><size>1.80 1.55 0.12</size></box></geometry>
+      </collision>
+      <visual name="roof_visual">
+        <pose>0 0 2.23 0 0 0</pose>
+        <geometry><box><size>1.80 1.55 0.12</size></box></geometry>
+        <material><diffuse>0.55 0.59 0.61 1</diffuse></material>
+      </visual>
+
+      <!-- Front posts and lintel form the safety-door aperture. -->
+      <collision name="front_left_post_collision">
+        <pose>-0.86 0.65 1.47 0 0 0</pose>
+        <geometry><box><size>0.10 0.18 1.42</size></box></geometry>
+      </collision>
+      <visual name="front_left_post_visual">
+        <pose>-0.86 0.65 1.47 0 0 0</pose>
+        <geometry><box><size>0.10 0.18 1.42</size></box></geometry>
+        <material><diffuse>0.18 0.22 0.24 1</diffuse></material>
+      </visual>
+      <collision name="front_right_post_collision">
+        <pose>-0.86 -0.65 1.47 0 0 0</pose>
+        <geometry><box><size>0.10 0.18 1.42</size></box></geometry>
+      </collision>
+      <visual name="front_right_post_visual">
+        <pose>-0.86 -0.65 1.47 0 0 0</pose>
+        <geometry><box><size>0.10 0.18 1.42</size></box></geometry>
+        <material><diffuse>0.18 0.22 0.24 1</diffuse></material>
+      </visual>
+      <collision name="front_lintel_collision">
+        <pose>-0.86 0 2.08 0 0 0</pose>
+        <geometry><box><size>0.10 1.18 0.22</size></box></geometry>
+      </collision>
+      <visual name="front_lintel_visual">
+        <pose>-0.86 0 2.08 0 0 0</pose>
+        <geometry><box><size>0.10 1.18 0.22</size></box></geometry>
+        <material><diffuse>0.20 0.24 0.26 1</diffuse></material>
+      </visual>
+
+      <!-- Sloped chip pan, T-slot work table and two-jaw fixture. -->
+      <collision name="chip_pan_collision">
+        <pose>-0.05 0 0.87 0 0 0</pose>
+        <geometry><box><size>1.45 1.24 0.10</size></box></geometry>
+      </collision>
+      <visual name="chip_pan_visual">
+        <pose>-0.05 0 0.87 0 0 0</pose>
+        <geometry><box><size>1.45 1.24 0.10</size></box></geometry>
+        <material><diffuse>0.25 0.28 0.29 1</diffuse><specular>0.8 0.8 0.8 1</specular></material>
+      </visual>
+      <!-- The loading vise sits near the door on an extended table, within
+           the UR5e workspace from a collision-free parking pose. -->
+      <collision name="work_table_collision">
+        <pose>-0.40 0 1.01 0 0 0</pose>
+        <geometry><box><size>0.90 0.72 0.16</size></box></geometry>
+      </collision>
+      <visual name="work_table_visual">
+        <pose>-0.40 0 1.01 0 0 0</pose>
+        <geometry><box><size>0.90 0.72 0.16</size></box></geometry>
+        <material><diffuse>0.12 0.14 0.15 1</diffuse><specular>0.9 0.9 0.9 1</specular></material>
+      </visual>
+      <visual name="table_slot_1"><pose>-0.40 -0.24 1.10 0 0 0</pose><geometry><box><size>0.66 0.025 0.012</size></box></geometry><material><diffuse>0.02 0.02 0.02 1</diffuse></material></visual>
+      <visual name="table_slot_2"><pose>-0.40 0 1.10 0 0 0</pose><geometry><box><size>0.66 0.025 0.012</size></box></geometry><material><diffuse>0.02 0.02 0.02 1</diffuse></material></visual>
+      <visual name="table_slot_3"><pose>-0.40 0.24 1.10 0 0 0</pose><geometry><box><size>0.66 0.025 0.012</size></box></geometry><material><diffuse>0.02 0.02 0.02 1</diffuse></material></visual>
+      <!-- The zero-point pallet extends to the work-table front edge so the
+           full 50 mm stock footprint remains supported at the loading datum. -->
+      <collision name="fixture_base_collision"><pose>-0.65 0 1.16 0 0 0</pose><geometry><box><size>0.40 0.38 0.12</size></box></geometry></collision>
+      <visual name="fixture_base_visual"><pose>-0.65 0 1.16 0 0 0</pose><geometry><box><size>0.40 0.38 0.12</size></box></geometry><material><diffuse>0.16 0.22 0.30 1</diffuse></material></visual>
+      <!-- Flush locator marks represent a zero-point pallet. The physical
+           fixture base supports stock without protruding into the wrist corridor. -->
+      <visual name="fixture_jaw_left_visual"><pose>-0.75 0.13 1.2225 0 0 0</pose><geometry><box><size>0.11 0.07 0.005</size></box></geometry><material><diffuse>0.52 0.55 0.56 1</diffuse></material></visual>
+      <visual name="fixture_jaw_right_visual"><pose>-0.75 -0.13 1.2225 0 0 0</pose><geometry><box><size>0.11 0.07 0.005</size></box></geometry><material><diffuse>0.52 0.55 0.56 1</diffuse></material></visual>
+
+      <!-- Spindle head is visually detailed and physically blocks invalid paths. -->
+      <collision name="spindle_head_collision"><pose>0.56 0 1.55 0 0 0</pose><geometry><box><size>0.46 0.52 0.58</size></box></geometry></collision>
+      <visual name="spindle_head_visual"><pose>0.56 0 1.55 0 0 0</pose><geometry><box><size>0.46 0.52 0.58</size></box></geometry><material><diffuse>0.43 0.47 0.48 1</diffuse></material></visual>
+      <collision name="spindle_nose_collision"><pose>0.25 0 1.44 0 1.5708 0</pose><geometry><cylinder><radius>0.105</radius><length>0.22</length></cylinder></geometry></collision>
+      <visual name="spindle_nose_visual"><pose>0.25 0 1.44 0 1.5708 0</pose><geometry><cylinder><radius>0.105</radius><length>0.22</length></cylinder></geometry><material><diffuse>0.16 0.17 0.18 1</diffuse><specular>1 1 1 1</specular></material></visual>
+      <visual name="tool_holder"><pose>0.09 0 1.44 0 1.5708 0</pose><geometry><cylinder><radius>0.050</radius><length>0.13</length></cylinder></geometry><material><diffuse>0.08 0.09 0.10 1</diffuse></material></visual>
+      <visual name="cutting_tool"><pose>-0.015 0 1.44 0 1.5708 0</pose><geometry><cylinder><radius>0.014</radius><length>0.10</length></cylinder></geometry><material><diffuse>0.55 0.58 0.60 1</diffuse></material></visual>
+
+      <!-- Operator panel, E-stop, status display and stack light. -->
+      <collision name="hmi_collision"><pose>-0.93 -0.86 1.42 0 0 0</pose><geometry><box><size>0.16 0.36 0.60</size></box></geometry></collision>
+      <visual name="hmi_body"><pose>-0.93 -0.86 1.42 0 0 0</pose><geometry><box><size>0.16 0.36 0.60</size></box></geometry><material><diffuse>0.14 0.17 0.18 1</diffuse></material></visual>
+      <visual name="hmi_screen"><pose>-1.02 -0.86 1.55 0 0 0</pose><geometry><box><size>0.025 0.25 0.20</size></box></geometry><material><emissive>0.02 0.30 0.52 1</emissive><diffuse>0.02 0.15 0.24 1</diffuse></material></visual>
+      <visual name="emergency_stop"><pose>-1.04 -0.86 1.27 0 1.5708 0</pose><geometry><cylinder><radius>0.055</radius><length>0.055</length></cylinder></geometry><material><diffuse>0.85 0.02 0.02 1</diffuse></material></visual>
+      <visual name="cycle_start"><pose>-1.04 -0.75 1.17 0 1.5708 0</pose><geometry><cylinder><radius>0.027</radius><length>0.035</length></cylinder></geometry><material><emissive>0.02 0.65 0.08 1</emissive></material></visual>
+      <visual name="stack_pole"><pose>0.57 -0.68 2.46 0 0 0</pose><geometry><cylinder><radius>0.018</radius><length>0.42</length></cylinder></geometry><material><diffuse>0.12 0.12 0.12 1</diffuse></material></visual>
+      <visual name="stack_red"><pose>0.57 -0.68 2.71 0 0 0</pose><geometry><cylinder><radius>0.055</radius><length>0.10</length></cylinder></geometry><material><diffuse>0.65 0.02 0.02 1</diffuse></material></visual>
+      <visual name="stack_amber"><pose>0.57 -0.68 2.60 0 0 0</pose><geometry><cylinder><radius>0.055</radius><length>0.10</length></cylinder></geometry><material><diffuse>0.95 0.45 0.02 1</diffuse></material></visual>
+      <visual name="stack_green"><pose>0.57 -0.68 2.49 0 0 0</pose><geometry><cylinder><radius>0.055</radius><length>0.10</length></cylinder></geometry><material><emissive>0.02 0.42 0.05 1</emissive></material></visual>
+
+      <!-- AprilTag mounting plate; the detector texture is a separate asset step. -->
+      <visual name="tag_plate"><pose>-0.93 0.58 1.83 0 1.5708 0</pose><geometry><box><size>0.20 0.20 0.012</size></box></geometry><material><diffuse>0.96 0.96 0.96 1</diffuse></material></visual>
+
+      <!-- These low-rate contacts make model-to-planning-scene mismatches
+           observable in regression logs. They do not affect collision forces. -->
+      <sensor name="base_contact" type="contact">
+        <always_on>true</always_on><update_rate>20</update_rate>
+        <contact><collision>base_collision</collision>
+          <topic>/factory/cnc/contacts</topic></contact>
+      </sensor>
+      <sensor name="chip_pan_contact" type="contact">
+        <always_on>true</always_on><update_rate>20</update_rate>
+        <contact><collision>chip_pan_collision</collision>
+          <topic>/factory/cnc/contacts</topic></contact>
+      </sensor>
+      <sensor name="work_table_contact" type="contact">
+        <always_on>true</always_on><update_rate>20</update_rate>
+        <contact><collision>work_table_collision</collision>
+          <topic>/factory/cnc/contacts</topic></contact>
+      </sensor>
+      <sensor name="fixture_base_contact" type="contact">
+        <always_on>true</always_on><update_rate>20</update_rate>
+        <contact><collision>fixture_base_collision</collision>
+          <topic>/factory/cnc/contacts</topic></contact>
+      </sensor>
+      <sensor name="front_left_post_contact" type="contact">
+        <always_on>true</always_on><update_rate>20</update_rate>
+        <contact><collision>front_left_post_collision</collision>
+          <topic>/factory/cnc/contacts</topic></contact>
+      </sensor>
+      <sensor name="front_right_post_contact" type="contact">
+        <always_on>true</always_on><update_rate>20</update_rate>
+        <contact><collision>front_right_post_collision</collision>
+          <topic>/factory/cnc/contacts</topic></contact>
+      </sensor>
+      <sensor name="front_lintel_contact" type="contact">
+        <always_on>true</always_on><update_rate>20</update_rate>
+        <contact><collision>front_lintel_collision</collision>
+          <topic>/factory/cnc/contacts</topic></contact>
+      </sensor>
+    </link>
+
+    <link name="sliding_door">
+      <pose>-0.94 0 1.48 0 0 0</pose>
+      <inertial><mass>38</mass><inertia><ixx>5.4</ixx><iyy>1.9</iyy><izz>6.8</izz></inertia></inertial>
+      <collision name="door_collision"><geometry><box><size>0.055 1.13 1.16</size></box></geometry></collision>
+      <!-- Four visual rails leave a genuine transparent window opening. The
+           single full-size collision still represents the safety door. -->
+      <visual name="door_frame_top"><pose>0 0 0.505 0 0 0</pose><geometry><box><size>0.055 1.13 0.15</size></box></geometry><material><diffuse>0.12 0.15 0.17 1</diffuse></material></visual>
+      <visual name="door_frame_bottom"><pose>0 0 -0.425 0 0 0</pose><geometry><box><size>0.055 1.13 0.31</size></box></geometry><material><diffuse>0.12 0.15 0.17 1</diffuse></material></visual>
+      <visual name="door_frame_left"><pose>0 0.515 0.08 0 0 0</pose><geometry><box><size>0.055 0.10 0.70</size></box></geometry><material><diffuse>0.12 0.15 0.17 1</diffuse></material></visual>
+      <visual name="door_frame_right"><pose>0 -0.515 0.08 0 0 0</pose><geometry><box><size>0.055 0.10 0.70</size></box></geometry><material><diffuse>0.12 0.15 0.17 1</diffuse></material></visual>
+
+      <visual name="window"><pose>-0.032 0 0.08 0 0 0</pose><geometry><box><size>0.018 0.86 0.70</size></box></geometry><material><ambient>0.04 0.13 0.18 0.45</ambient><diffuse>0.05 0.18 0.24 0.45</diffuse><specular>0.8 0.8 0.8 0.45</specular></material><transparency>0.55</transparency></visual>
+      <visual name="door_handle"><pose>-0.07 -0.47 0 0 0 0</pose><geometry><box><size>0.05 0.055 0.34</size></box></geometry><material><diffuse>0.75 0.77 0.78 1</diffuse></material></visual>
+      <sensor name="door_contact" type="contact">
+        <always_on>true</always_on><update_rate>20</update_rate>
+        <contact><collision>door_collision</collision>
+          <topic>/factory/cnc/contacts</topic></contact>
+      </sensor>
+    </link>
+    <joint name="sliding_door_joint" type="prismatic">
+      <parent>cabinet</parent>
+      <child>sliding_door</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit><lower>0</lower><upper>1.18</upper><effort>1200</effort><velocity>0.55</velocity></limit>
+        <dynamics><damping>80</damping><friction>15</friction></dynamics>
+      </axis>
+    </joint>
+
+    <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
+      <joint_name>sliding_door_joint</joint_name>
+      <p_gain>1600</p_gain><i_gain>3</i_gain><d_gain>220</d_gain>
+      <i_max>10</i_max><i_min>-10</i_min><cmd_max>1200</cmd_max><cmd_min>-1200</cmd_min>
+      <initial_position>0</initial_position>
+    </plugin>
+
+    <!-- Equivalent to a real door-open limit switch. The ROS bridge exposes
+         this measured joint position independently from the PLC command. -->
+    <plugin filename="gz-sim-joint-state-publisher-system"
+            name="gz::sim::systems::JointStatePublisher">
+      <joint_name>sliding_door_joint</joint_name>
+    </plugin>
+  </model>
+</sdf>

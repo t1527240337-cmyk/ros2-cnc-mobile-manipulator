@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<!-- MoveItConfigsBuilder expects the robot xacro inside this package. The
+     maintained description remains in mobile_manipulator_description. -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="factory_mobile_manipulator">
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/mobile_manipulator.urdf.xacro"/>
+</robot>

@@ -1,0 +1,16 @@
+uint8 QUERY=0
+uint8 START=1
+uint8 STOP_AFTER_CURRENT=2
+
+uint8 command
+string[] allowed_machine_ids
+---
+bool accepted
+bool enabled
+bool stop_after_current
+string state
+string active_order_id
+uint32 completed_orders
+uint32 completed_parts
+uint32 failed_orders
+string message

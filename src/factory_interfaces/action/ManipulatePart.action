@@ -1,0 +1,29 @@
+uint8 PICK=0
+uint8 PLACE=1
+
+uint8 operation
+string station_id
+string part_id
+# A positive value is required only for PLACE at the finished bin. Raw-bin
+# picks are selected by RGB-D and CNC operations use the calibrated fixture.
+uint32 placement_slot_id
+
+---
+uint16 OK=0
+uint16 INVALID_REQUEST=1
+uint16 DEPENDENCY_UNAVAILABLE=2
+uint16 MOTION_FAILED=3
+uint16 GRIPPER_FAILED=4
+uint16 PHYSICAL_EVIDENCE_FAILED=5
+uint16 CANCELLED=6
+uint16 PERCEPTION_FAILED=7
+bool success
+uint16 error_code
+string message
+# Simulator contact identity discovered after an anonymous raw-bin grasp.
+# Business logic must continue to use the request's logical part_id.
+string physical_part_id
+---
+string phase
+uint8 attempt
+string detail

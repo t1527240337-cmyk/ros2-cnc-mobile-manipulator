@@ -1,0 +1,45 @@
+uint8 BEGIN_TASK=0
+uint8 ENSURE_ENERGY=1
+uint8 CHECK_MACHINE_IDLE=2
+uint8 DOCK=3
+uint8 UNDOCK=4
+uint8 PICK=5
+uint8 PLACE=6
+uint8 OPEN_DOOR=7
+uint8 CLOSE_DOOR=8
+uint8 START_MACHINE=9
+uint8 CONFIRM_LOAD=10
+uint8 CONFIRM_UNLOAD=11
+uint8 WAIT_MACHINE_DONE=12
+uint8 COMMIT_PICK_RAW=13
+uint8 COMMIT_PLACE_FINISHED=14
+uint8 COMPLETE_TASK=15
+uint8 ABORT_TASK=16
+
+# A task session is opened by BEGIN_TASK and closed by COMPLETE_TASK or
+# ABORT_TASK. Every intermediate goal must carry the same task_id.
+string task_id
+# Only fields relevant to step_kind are populated. Perception-derived source
+# and destination geometry never crosses this behavior-tree boundary.
+uint8 step_kind
+string station_id
+string machine_id
+string part_id
+bool auto_recharge
+bool stow_arm
+---
+uint16 OK=0
+uint16 INVALID_REQUEST=1
+uint16 DEPENDENCY_UNAVAILABLE=2
+uint16 PRECONDITION_FAILED=3
+uint16 EXECUTION_FAILED=4
+uint16 CANCELLED=5
+uint16 SESSION_CONFLICT=6
+
+bool success
+bool retryable
+uint16 error_code
+string message
+---
+string phase
+string detail

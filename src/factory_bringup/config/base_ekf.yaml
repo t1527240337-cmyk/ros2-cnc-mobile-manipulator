@@ -1,0 +1,37 @@
+base_state_estimator:
+  ros__parameters:
+    use_sim_time: true
+    frequency: 50.0
+    sensor_timeout: 0.20
+    two_d_mode: true
+    publish_tf: true
+    publish_acceleration: false
+    map_frame: map
+    odom_frame: odom
+    base_link_frame: base_footprint
+    world_frame: odom
+
+    # Encoders supply forward velocity only. Their integrated heading is not
+    # fused because wheel slip is exactly what the IMU must observe.
+    odom0: /base_controller/odom
+    odom0_config: [false, false, false,
+                   false, false, false,
+                   true,  false, false,
+                   false, false, false,
+                   false, false, false]
+    odom0_queue_size: 20
+    odom0_differential: false
+    odom0_relative: false
+
+    # The rigid base IMU supplies yaw orientation and yaw rate. Roll and pitch
+    # are discarded by two_d_mode while still remaining available to tests.
+    imu0: /imu/data
+    imu0_config: [false, false, false,
+                  false, false, true,
+                  false, false, false,
+                  false, false, true,
+                  false, false, false]
+    imu0_queue_size: 50
+    imu0_differential: false
+    imu0_relative: true
+    imu0_remove_gravitational_acceleration: false

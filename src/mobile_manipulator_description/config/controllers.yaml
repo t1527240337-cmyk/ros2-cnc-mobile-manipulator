@@ -1,0 +1,64 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 100
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+    base_controller:
+      type: diff_drive_controller/DiffDriveController
+    arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+    gripper_controller:
+      type: forward_command_controller/ForwardCommandController
+
+base_controller:
+  ros__parameters:
+    left_wheel_names:
+      [left_drive_wheel_joint, left_front_wheel_joint, left_rear_wheel_joint]
+    right_wheel_names:
+      [right_drive_wheel_joint, right_front_wheel_joint, right_rear_wheel_joint]
+    wheel_separation: 0.70
+    # Calibrated against Gazebo model-pose truth for the two-wheel/caster base.
+    # Offline Gazebo calibration makes clockwise and counter-clockwise
+    # half-turns agree with model-pose truth within 0.08 rad. Runtime
+    # navigation still integrates wheel joint feedback only.
+    wheel_separation_multiplier: 1.093
+    wheel_radius: 0.16
+    publish_rate: 50.0
+    base_frame_id: base_footprint
+    odom_frame_id: odom
+    # The EKF is the sole odom->base_footprint TF authority.
+    enable_odom_tf: false
+    cmd_vel_timeout: 0.5
+    use_stamped_vel: false
+
+arm_controller:
+  ros__parameters:
+    joints:
+      - arm_shoulder_pan_joint
+      - arm_shoulder_lift_joint
+      - arm_elbow_joint
+      - arm_wrist_1_joint
+      - arm_wrist_2_joint
+      - arm_wrist_3_joint
+    command_interfaces: [position]
+    state_interfaces: [position, velocity]
+    allow_partial_joints_goal: false
+    constraints:
+      goal_time: 15.0
+      stopped_velocity_tolerance: 0.05
+      # Gazebo contact compliance leaves about 0.03 rad of joint error while
+      # carrying stock. Cartesian moves are independently checked against the
+      # measured gripper TCP by factory_core before the workflow may continue.
+      arm_shoulder_pan_joint: {trajectory: 0.0, goal: 0.040}
+      arm_shoulder_lift_joint: {trajectory: 0.0, goal: 0.040}
+      arm_elbow_joint: {trajectory: 0.0, goal: 0.040}
+      arm_wrist_1_joint: {trajectory: 0.0, goal: 0.040}
+      arm_wrist_2_joint: {trajectory: 0.0, goal: 0.040}
+      arm_wrist_3_joint: {trajectory: 0.0, goal: 0.040}
+
+gripper_controller:
+  ros__parameters:
+    joints:
+      - gripper_right_finger_joint
+      - gripper_left_finger_joint
+    interface_name: effort

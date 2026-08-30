@@ -1,0 +1,34 @@
+<root BTCPP_format="4" main_tree_to_execute="LoadRaw">
+  <BehaviorTree ID="LoadRaw">
+    <Fallback name="task_scope">
+      <Sequence name="load_raw_workflow">
+        <BeginPhysicalTask task_id="{task_id}"/>
+        <EnsureEnergy task_id="{task_id}" auto_recharge="{auto_recharge}"/>
+        <CheckMachineIdle task_id="{task_id}" machine_id="{machine_id}"/>
+        <DockStation task_id="{task_id}" station_id="raw_bin"
+                     result_timeout_sec="240"/>
+        <PickPart task_id="{task_id}" station_id="raw_bin"
+                  part_id="{part_id}"
+                  result_timeout_sec="180"/>
+        <CommitPickRaw task_id="{task_id}" part_id="{part_id}"/>
+        <UndockStation task_id="{task_id}" station_id="raw_bin"/>
+        <OpenMachineDoor task_id="{task_id}" machine_id="{machine_id}"/>
+        <DockStation task_id="{task_id}" station_id="{machine_id}"
+                     result_timeout_sec="180"/>
+        <PlacePart task_id="{task_id}" station_id="{machine_id}"
+                   part_id="{part_id}"
+                   result_timeout_sec="180"/>
+        <ConfirmMachineLoad task_id="{task_id}" machine_id="{machine_id}"
+                            part_id="{part_id}"/>
+        <UndockStation task_id="{task_id}" station_id="{machine_id}"/>
+        <CloseMachineDoor task_id="{task_id}" machine_id="{machine_id}"/>
+        <StartMachine task_id="{task_id}" machine_id="{machine_id}"/>
+        <CompletePhysicalTask task_id="{task_id}"/>
+      </Sequence>
+      <Sequence name="abort_failed_load">
+        <AbortPhysicalTask task_id="{task_id}"/>
+        <AlwaysFailure/>
+      </Sequence>
+    </Fallback>
+  </BehaviorTree>
+</root>

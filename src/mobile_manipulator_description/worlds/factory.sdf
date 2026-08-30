@@ -1,0 +1,289 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <world name="multi_machine_factory">
+    <!-- Keep the proven 2 ms contact step; only request faster wall-clock
+         progression. Controllers, sensors and machine timers all use
+         simulation time, so this does not coarsen two-finger physics. -->
+    <physics name="physics" type="ignored">
+      <max_step_size>0.002</max_step_size><real_time_factor>1.5</real_time_factor>
+    </physics>
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <!-- Required for the fingertip <sensor type="contact"> instances: without
+         this system the /factory/gripper/{left,right}_contact topics stay
+         silent and VERIFY_TWO_FINGER_CONTACT can never pass. -->
+    <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact"/>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors"><render_engine>ogre2</render_engine></plugin>
+    <scene><ambient>0.55 0.55 0.55 1</ambient><background>0.12 0.14 0.18 1</background><shadows>true</shadows></scene>
+    <light name="sun" type="directional"><cast_shadows>true</cast_shadows><pose>0 0 10 0 0 0</pose><diffuse>0.9 0.9 0.9 1</diffuse><specular>0.2 0.2 0.2 1</specular><direction>-0.4 0.2 -1</direction></light>
+
+    <model name="floor"><static>true</static><link name="link"><collision name="collision"><geometry><box><size>14 10 0.1</size></box></geometry></collision><visual name="visual"><geometry><box><size>14 10 0.1</size></box></geometry><material><ambient>0.28 0.30 0.32 1</ambient><diffuse>0.32 0.34 0.36 1</diffuse></material></visual></link></model>
+
+    <include><uri>model://cnc_machine</uri><name>machine_1</name><pose>3.8 3.0 0 0 0 1.5708</pose></include>
+    <include><uri>model://cnc_machine</uri><name>machine_2</name><pose>0.8 3.0 0 0 0 1.5708</pose></include>
+    <include><uri>model://cnc_machine</uri><name>machine_3</name><pose>-2.2 3.0 0 0 0 1.5708</pose></include>
+
+
+    <!-- Each CNC has a unique, camera-height station marker. The marker is
+         offset 0.35 m from the manipulation axis so a stowed arm cannot hide
+         its black border. All identical stations share this surveyed offset,
+         and the fixture transform maps vision back to the vise centre. -->
+    <model name="machine_1_marker">
+      <static>true</static><pose>4.15 1.98 1.20 0 0 0</pose>
+      <link name="marker">
+        <visual name="support">
+          <geometry><box><size>0.22 0.02 0.22</size></box></geometry>
+          <material><diffuse>0.18 0.20 0.22 1</diffuse></material>
+        </visual>
+        <visual name="tag_1">
+          <pose>0 -0.011 0 1.5708 0 0</pose>
+          <geometry><mesh><uri>model://factory_tags/meshes/tag36h11_1.obj</uri></mesh></geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="machine_2_marker">
+      <static>true</static><pose>1.15 1.98 1.20 0 0 0</pose>
+      <link name="marker">
+        <visual name="support">
+          <geometry><box><size>0.22 0.02 0.22</size></box></geometry>
+          <material><diffuse>0.18 0.20 0.22 1</diffuse></material>
+        </visual>
+        <visual name="tag_2">
+          <pose>0 -0.011 0 1.5708 0 0</pose>
+          <geometry><mesh><uri>model://factory_tags/meshes/tag36h11_2.obj</uri></mesh></geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="machine_3_marker">
+      <static>true</static><pose>-1.85 1.98 1.20 0 0 0</pose>
+      <link name="marker">
+        <visual name="support">
+          <geometry><box><size>0.22 0.02 0.22</size></box></geometry>
+          <material><diffuse>0.18 0.20 0.22 1</diffuse></material>
+        </visual>
+        <visual name="tag_3">
+          <pose>0 -0.011 0 1.5708 0 0</pose>
+          <geometry><mesh><uri>model://factory_tags/meshes/tag36h11_3.obj</uri></mesh></geometry>
+        </visual>
+      </link>
+    </model>
+
+    <model name="raw_bin">
+      <static>true</static>
+      <!-- Raise the complete fixture so the UR5e wrist clears the mobile-base
+           collision envelope during the final horizontal side grasp. -->
+      <pose>-4.5 -2.7 0.054 0 0 0</pose>
+      <link name="bin">
+        <collision name="base">
+          <pose>0 0 0.25 0 0 0</pose>
+          <geometry><box><size>1.2 0.9 0.5</size></box></geometry>
+        </collision>
+        <visual name="base">
+          <pose>0 0 0.25 0 0 0</pose>
+          <geometry><box><size>1.2 0.9 0.5</size></box></geometry>
+          <material><diffuse>0.12 0.32 0.65 1</diffuse></material>
+        </visual>
+        <!-- A three-sided 50 mm rim turns the table into a shallow bin while
+             keeping the robot-facing edge open for a horizontal side grasp. -->
+        <collision name="rear_rim">
+          <pose>-0.58 0 0.525 0 0 0</pose>
+          <geometry><box><size>0.04 0.90 0.05</size></box></geometry>
+        </collision>
+        <visual name="rear_rim">
+          <pose>-0.58 0 0.525 0 0 0</pose>
+          <geometry><box><size>0.04 0.90 0.05</size></box></geometry>
+          <material><diffuse>0.08 0.24 0.52 1</diffuse></material>
+        </visual>
+        <collision name="left_rim">
+          <pose>0 0.43 0.525 0 0 0</pose>
+          <geometry><box><size>1.12 0.04 0.05</size></box></geometry>
+        </collision>
+        <visual name="left_rim">
+          <pose>0 0.43 0.525 0 0 0</pose>
+          <geometry><box><size>1.12 0.04 0.05</size></box></geometry>
+          <material><diffuse>0.08 0.24 0.52 1</diffuse></material>
+        </visual>
+        <collision name="right_rim">
+          <pose>0 -0.43 0.525 0 0 0</pose>
+          <geometry><box><size>1.12 0.04 0.05</size></box></geometry>
+        </collision>
+        <visual name="right_rim">
+          <pose>0 -0.43 0.525 0 0 0</pose>
+          <geometry><box><size>1.12 0.04 0.05</size></box></geometry>
+          <material><diffuse>0.08 0.24 0.52 1</diffuse></material>
+        </visual>
+        <visual name="tag_support">
+          <pose>0.58 0.55 0.70 0 0 0</pose>
+          <geometry><box><size>0.06 0.10 0.40</size></box></geometry>
+          <material><diffuse>0.18 0.20 0.22 1</diffuse></material>
+        </visual>
+        <collision name="tag_support_collision">
+          <pose>0.58 0.55 0.70 0 0 0</pose>
+          <geometry><box><size>0.06 0.10 0.40</size></box></geometry>
+        </collision>
+        <visual name="tag_10">
+          <pose>0.612 0.55 0.90 0 1.5708 0</pose>
+          <geometry><mesh>
+            <uri>model://factory_tags/meshes/tag36h11_10.obj</uri>
+          </mesh></geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="finished_bin">
+      <static>true</static>
+      <pose>4.5 -2.7 0.054 0 0 0</pose>
+      <link name="bin">
+        <collision name="base">
+          <pose>0 0 0.25 0 0 0</pose>
+          <geometry><box><size>1.2 0.9 0.5</size></box></geometry>
+        </collision>
+        <visual name="base">
+          <pose>0 0 0.25 0 0 0</pose>
+          <geometry><box><size>1.2 0.9 0.5</size></box></geometry>
+          <material><diffuse>0.10 0.55 0.24 1</diffuse></material>
+        </visual>
+        <!-- The robot approaches this bin from local -X, so that edge stays
+             open and the opposite rim contains released finished parts. -->
+        <collision name="rear_rim">
+          <pose>0.58 0 0.525 0 0 0</pose>
+          <geometry><box><size>0.04 0.90 0.05</size></box></geometry>
+        </collision>
+        <visual name="rear_rim">
+          <pose>0.58 0 0.525 0 0 0</pose>
+          <geometry><box><size>0.04 0.90 0.05</size></box></geometry>
+          <material><diffuse>0.06 0.42 0.18 1</diffuse></material>
+        </visual>
+        <collision name="left_rim">
+          <pose>0 0.43 0.525 0 0 0</pose>
+          <geometry><box><size>1.12 0.04 0.05</size></box></geometry>
+        </collision>
+        <visual name="left_rim">
+          <pose>0 0.43 0.525 0 0 0</pose>
+          <geometry><box><size>1.12 0.04 0.05</size></box></geometry>
+          <material><diffuse>0.06 0.42 0.18 1</diffuse></material>
+        </visual>
+        <collision name="right_rim">
+          <pose>0 -0.43 0.525 0 0 0</pose>
+          <geometry><box><size>1.12 0.04 0.05</size></box></geometry>
+        </collision>
+        <visual name="right_rim">
+          <pose>0 -0.43 0.525 0 0 0</pose>
+          <geometry><box><size>1.12 0.04 0.05</size></box></geometry>
+          <material><diffuse>0.06 0.42 0.18 1</diffuse></material>
+        </visual>
+        <visual name="tag_support">
+          <pose>-0.58 -0.55 0.70 0 0 0</pose>
+          <geometry><box><size>0.06 0.10 0.40</size></box></geometry>
+          <material><diffuse>0.18 0.20 0.22 1</diffuse></material>
+        </visual>
+        <collision name="tag_support_collision">
+          <pose>-0.58 -0.55 0.70 0 0 0</pose>
+          <geometry><box><size>0.06 0.10 0.40</size></box></geometry>
+        </collision>
+        <visual name="tag_11">
+          <pose>-0.612 -0.55 0.90 0 -1.5708 0</pose>
+          <geometry><mesh>
+            <uri>model://factory_tags/meshes/tag36h11_11.obj</uri>
+          </mesh></geometry>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Local -X faces the factory after the -90 degree yaw. The green
+         contact and Tag 20 therefore face the approaching robot. -->
+    <model name="charge_dock">
+      <static>true</static>
+      <pose>0 -3.7 0 0 0 -1.5708</pose>
+      <link name="dock">
+        <collision name="collision">
+          <pose>0 0 0.30 0 0 0</pose>
+          <geometry><box><size>0.18 0.8 0.60</size></box></geometry>
+        </collision>
+        <visual name="body">
+          <pose>0 0 0.30 0 0 0</pose>
+          <geometry><box><size>0.18 0.8 0.60</size></box></geometry>
+          <material><diffuse>0.96 0.48 0.05 1</diffuse></material>
+        </visual>
+        <collision name="charging_contact_collision">
+          <pose>-0.10 0 0.22 0 0 0</pose>
+          <geometry><box><size>0.025 0.25 0.18</size></box></geometry>
+        </collision>
+        <!-- The infrastructure-side contact switch is authored in native
+             SDF, so its collision reference cannot be renamed by URDF
+             conversion. It publishes the complete robot/dock collision pair. -->
+        <sensor name="charging_contact" type="contact">
+          <always_on>true</always_on>
+          <update_rate>50</update_rate>
+          <contact>
+            <collision>charging_contact_collision</collision>
+            <topic>/factory/charging/contacts</topic>
+          </contact>
+        </sensor>
+        <visual name="contact">
+          <pose>-0.10 0 0.22 0 0 0</pose>
+          <geometry><box><size>0.02 0.25 0.18</size></box></geometry>
+          <material><emissive>0.1 0.8 0.2 1</emissive></material>
+        </visual>
+        <collision name="marker_post_collision">
+          <pose>-0.13 0 0.70 0 0 0</pose>
+          <geometry><box><size>0.06 0.10 0.40</size></box></geometry>
+        </collision>
+        <visual name="marker_post">
+          <pose>-0.13 0 0.70 0 0 0</pose>
+          <geometry><box><size>0.06 0.10 0.40</size></box></geometry>
+          <material><diffuse>0.18 0.20 0.22 1</diffuse></material>
+        </visual>
+        <visual name="tag_20">
+          <pose>-0.162 0 0.88 0 -1.5708 0</pose>
+          <geometry><mesh>
+            <uri>model://factory_tags/meshes/tag36h11_20.obj</uri>
+          </mesh></geometry>
+        </visual>
+      </link>
+    </model>
+
+    <!-- A fixed observation camera makes headless cloud runs recordable.
+         It has no collision geometry and does not participate in control. -->
+    <model name="demo_overview_camera">
+      <static>true</static>
+      <pose>0 -8.0 7.0 0 0.67 1.5708</pose>
+      <link name="camera_link">
+        <sensor name="overview" type="camera">
+          <always_on>false</always_on>
+          <update_rate>20</update_rate>
+          <topic>/demo/overview/image</topic>
+          <camera>
+            <horizontal_fov>1.30</horizontal_fov>
+            <image>
+              <width>1280</width>
+              <height>720</height>
+              <format>R8G8B8</format>
+            </image>
+            <clip>
+              <near>0.10</near>
+              <far>30.0</far>
+            </clip>
+          </camera>
+        </sensor>
+      </link>
+    </model>
+
+    <model name="temporary_obstacle"><static>true</static><pose>1.3 0.1 0 0 0 0</pose><link name="link"><collision name="collision"><pose>0 0 0.45 0 0 0</pose><geometry><box><size>0.55 0.55 0.9</size></box></geometry></collision><visual name="visual"><pose>0 0 0.45 0 0 0</pose><geometry><box><size>0.55 0.55 0.9</size></box></geometry><material><diffuse>0.95 0.72 0.05 1</diffuse></material></visual></link></model>
+
+    <!-- A configurable six-entity pool; startup provisioning activates the
+         requested count while control uses only RGB-D and tactile evidence. -->
+    <include><uri>model://workpiece</uri><name>raw_part_1</name><pose>-4.05 -2.97 0.614 0 0 0</pose></include>
+    <include><uri>model://workpiece</uri><name>raw_part_2</name><pose>-4.05 -2.70 0.614 0 0 0</pose></include>
+    <include><uri>model://workpiece</uri><name>raw_part_3</name><pose>-4.05 -2.43 0.614 0 0 0</pose></include>
+    <include><uri>model://workpiece</uri><name>raw_part_4</name><pose>-4.22 -2.97 0.614 0 0 0</pose></include>
+    <include><uri>model://workpiece</uri><name>raw_part_5</name><pose>-4.22 -2.70 0.614 0 0 0</pose></include>
+    <include><uri>model://workpiece</uri><name>raw_part_6</name><pose>-4.22 -2.43 0.614 0 0 0</pose></include>
+
+    <!-- Load the detachable joints after their child models exist.  Gazebo
+         resolves child_model when this system is configured and does not
+         promise to repair an unresolved endpoint later. -->
+    <include><uri>model://fixture_clamp_constraints</uri></include>
+  </world>
+</sdf>

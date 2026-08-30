@@ -1,0 +1,14 @@
+.git
+.github
+build
+install
+log
+artifacts
+tmp
+.pytest_cache
+__pycache__
+*.pyc
+.venv
+.venv-mcp
+.env
+.vscode

@@ -1,0 +1,75 @@
+docking_server:
+  ros__parameters:
+    controller_frequency: 50.0
+    initial_perception_timeout: 5.0
+    wait_charge_timeout: 5.0
+    dock_approach_timeout: 30.0
+    max_retries: 3
+    base_frame: base_link
+    fixed_frame: odom
+    odom_topic: /odometry/filtered
+    dock_prestaging_tolerance: 0.5
+    dock_plugins: [factory_station, factory_bin_station, charging_station]
+    factory_station:
+      plugin: factory_docking::StrictNonChargingDock
+      docking_threshold: 0.015
+      angular_threshold: 0.0524
+      use_nominal_pose_guard: true
+      max_refinement_translation: 0.005
+      max_refinement_yaw: 0.0087
+      staging_x_offset: -0.7
+      use_external_detection_pose: true
+      external_detection_timeout: 12.0
+      # Keep 70 mm between the chassis bumper and the CNC door plane.
+      external_detection_translation_x: -0.48
+      external_detection_rotation_roll: -1.5708
+      external_detection_rotation_pitch: 1.5708
+      external_detection_rotation_yaw: 0.0
+    # Bin markers are mounted 0.55 m sideways so their physical posts
+    # stay outside all three arm work corridors. This plugin maps that
+    # lateral tag pose back to the center-line manipulation fixture.
+    factory_bin_station:
+      plugin: factory_docking::StrictNonChargingDock
+      # Coarse stop only; dock_station performs the final 20 mm tag translation servo.
+      docking_threshold: 0.10
+      angular_threshold: 0.20
+      # Match nav2_params.yaml: this guarantees at least 0.35 m clearance
+      # from the calibrated bin work pose when UndockRobot succeeds.
+      staging_x_offset: -1.0
+      # The database pose is the center-line staging reference; map it
+      # to the calibrated arm work pose before bounded visual refinement.
+      use_nominal_pose_guard: true
+      # Move the chassis 50 mm closer than v7. The far corner of the
+      # randomized bin then stays inside the UR5e's stable Cartesian descent
+      # envelope while the front spring electrode retains physical clearance.
+      nominal_target_translation_x: -0.532
+      nominal_target_translation_y: 0.0
+      max_refinement_translation: 0.015
+      max_refinement_yaw: 0.0175
+      use_external_detection_pose: true
+      external_detection_timeout: 12.0
+      external_detection_translation_x: -0.57
+      external_detection_translation_y: 0.55
+      external_detection_rotation_roll: -1.5708
+      external_detection_rotation_pitch: 1.5708
+      external_detection_rotation_yaw: 0.0
+    charging_station:
+      plugin: opennav_docking::SimpleChargingDock
+      docking_threshold: 0.03
+      staging_x_offset: -0.7
+      use_external_detection_pose: true
+      external_detection_timeout: 12.0
+      external_detection_translation_x: -0.54
+      external_detection_rotation_roll: -1.5708
+      external_detection_rotation_pitch: 1.5708
+      external_detection_rotation_yaw: 0.0
+      use_battery_status: true
+      charging_threshold: 0.5
+      battery_state_topic: /battery_state
+    docks: [raw_bin, finished_bin, machine_1, machine_2, machine_3, charge_dock]
+    raw_bin: {type: factory_bin_station, frame: map, pose: [-3.85, -2.7, 3.14159]}
+    finished_bin: {type: factory_bin_station, frame: map, pose: [3.85, -2.7, 0.0]}
+    machine_1: {type: factory_station, frame: map, pose: [3.8, 1.98, 1.5708]}
+    machine_2: {type: factory_station, frame: map, pose: [0.8, 1.98, 1.5708]}
+    machine_3: {type: factory_station, frame: map, pose: [-2.2, 1.98, 1.5708]}
+    charge_dock: {type: charging_station, frame: map, pose: [0.0, -3.087, -1.5708]}

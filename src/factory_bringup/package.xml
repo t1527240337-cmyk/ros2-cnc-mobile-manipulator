@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>factory_bringup</name>
+  <version>0.1.0</version>
+  <description>Launch and configuration for the factory mobile manipulator.</description>
+  <maintainer email="maintainer@example.com">Factory Robot Maintainer</maintainer>
+  <license>Apache-2.0</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rclcpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>geometry_msgs</depend>
+  <depend>tf2_msgs</depend>
+  <exec_depend>factory_core</exec_depend>
+  <exec_depend>factory_task_bt</exec_depend>
+  <exec_depend>factory_perception</exec_depend>
+  <exec_depend>factory_docking</exec_depend>
+  <exec_depend>factory_agent</exec_depend>
+  <exec_depend>mobile_manipulator_description</exec_depend>
+  <exec_depend>factory_moveit_config</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>robot_localization</exec_depend>
+  <exec_depend>controller_manager</exec_depend>
+  <exec_depend>ros_gz_sim</exec_depend>
+  <exec_depend>ros_gz_bridge</exec_depend>
+  <exec_depend>nav2_bringup</exec_depend>
+  <exec_depend>opennav_docking</exec_depend>
+  <exec_depend>apriltag_ros</exec_depend>
+  <exec_depend>rosgraph_msgs</exec_depend>
+  <exec_depend>xacro</exec_depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>

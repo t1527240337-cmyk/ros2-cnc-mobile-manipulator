@@ -1,0 +1,9 @@
+uint8 PICK_FROM_RAW=0
+uint8 PLACE_IN_FINISHED=1
+
+uint8 event
+string part_id
+---
+bool accepted
+uint16 error_code
+string message

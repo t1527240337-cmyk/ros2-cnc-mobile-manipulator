@@ -1,0 +1,33 @@
+apriltag:
+  ros__parameters:
+    image_transport: raw
+    family: 36h11
+    size: 0.16
+    max_hamming: 0
+    detector:
+      threads: 4
+      decimate: 1.0
+      blur: 0.0
+      refine: true
+      sharpening: 0.25
+    tag:
+      ids: [10, 11, 20]
+      frames: [raw_bin_tag, finished_bin_tag, charge_dock_tag]
+      sizes: [0.16, 0.16, 0.16]
+
+machine_apriltag:
+  ros__parameters:
+    image_transport: raw
+    family: 36h11
+    size: 0.16
+    max_hamming: 0
+    detector:
+      threads: 4
+      decimate: 1.0
+      blur: 0.0
+      refine: true
+      sharpening: 0.25
+    tag:
+      ids: [1, 2, 3]
+      frames: [machine_1_tag, machine_2_tag, machine_3_tag]
+      sizes: [0.16, 0.16, 0.16]

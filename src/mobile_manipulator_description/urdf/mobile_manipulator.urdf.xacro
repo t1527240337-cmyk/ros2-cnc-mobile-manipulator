@@ -1,0 +1,863 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="factory_mobile_manipulator">
+  <xacro:arg name="use_sim" default="true"/>
+  <xacro:arg name="enable_perception" default="true"/>
+  <xacro:property name="factory_pi" value="3.141592653589793"/>
+
+  <!-- The arm and tool adapter use their maintained upstream descriptions.
+       The execution gripper below deliberately uses a project-owned,
+       loop-free parallel-jaw mechanism because constrained four-bar mimic
+       chains are not stable enough for repeatable contact tests. -->
+  <xacro:include filename="$(find ur_description)/urdf/ur_macro.xacro"/>
+
+  <material name="factory_blue"><color rgba="0.05 0.23 0.45 1"/></material>
+  <material name="track_black"><color rgba="0.025 0.025 0.025 1"/></material>
+  <material name="safety_orange"><color rgba="0.95 0.34 0.05 1"/></material>
+  <material name="aluminum"><color rgba="0.66 0.69 0.71 1"/></material>
+  <material name="charging_green"><color rgba="0.10 0.80 0.24 1"/></material>
+
+  <link name="base_footprint"/>
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0.34"/>
+  </joint>
+
+  <link name="base_link">
+    <visual name="lower_chassis">
+      <origin xyz="0 0 -0.03"/>
+      <geometry><box size="0.94 0.64 0.28"/></geometry>
+      <material name="factory_blue"/>
+    </visual>
+    <visual name="upper_deck">
+      <origin xyz="-0.08 0 0.17"/>
+      <geometry><box size="0.64 0.52 0.13"/></geometry>
+      <material name="aluminum"/>
+    </visual>
+    <visual name="front_bumper">
+      <origin xyz="0.49 0 -0.08"/>
+      <geometry><box size="0.055 0.67 0.16"/></geometry>
+      <material name="track_black"/>
+    </visual>
+    <visual name="rear_bumper">
+      <origin xyz="-0.49 0 -0.08"/>
+      <geometry><box size="0.055 0.67 0.16"/></geometry>
+      <material name="track_black"/>
+    </visual>
+    <collision name="chassis_collision">
+      <geometry><box size="0.90 0.62 0.30"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="95"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="4.5" ixy="0" ixz="0" iyy="7.8" iyz="0" izz="9.0"/>
+    </inertial>
+  </link>
+
+  <!-- Model the spring electrode as a separate physical part. Keeping this
+       fixed joint prevents sdformat from renaming the collision out from
+       under its contact sensor. -->
+  <link name="charging_electrode_link">
+    <visual name="charging_electrode">
+      <geometry><box size="0.064 0.24 0.12"/></geometry>
+      <material name="charging_green"/>
+    </visual>
+    <collision name="charging_contact_collision">
+      <geometry><box size="0.064 0.24 0.12"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="0.20"/>
+      <inertia ixx="0.0010" ixy="0" ixz="0"
+               iyy="0.0003" iyz="0" izz="0.0010"/>
+    </inertial>
+  </link>
+  <!-- The infrastructure switch observes this spring-loaded electrode. Its
+       30 mm compression travel absorbs docking error without pushing the
+       unpowered mobile base back out of electrical contact. -->
+  <joint name="charging_electrode_joint" type="prismatic">
+    <parent link="base_link"/><child link="charging_electrode_link"/>
+    <origin xyz="0.502 0 -0.08"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-0.030" upper="0.002" effort="500" velocity="0.10"/>
+    <dynamics damping="20" friction="0.20"/>
+  </joint>
+  <gazebo reference="charging_electrode_joint">
+    <springReference>0.0</springReference>
+    <springStiffness>100.0</springStiffness>
+    <implicitSpringDamper>true</implicitSpringDamper>
+  </gazebo>
+
+  <link name="imu_link">
+    <inertial>
+      <mass value="0.05"/>
+      <inertia ixx="0.00002" ixy="0" ixz="0"
+               iyy="0.00002" iyz="0" izz="0.00002"/>
+    </inertial>
+  </link>
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/><child link="imu_link"/>
+    <origin xyz="0 0 0.10"/>
+  </joint>
+  <gazebo reference="imu_joint">
+    <preserveFixedJoint>true</preserveFixedJoint>
+  </gazebo>
+  <gazebo reference="imu_link">
+    <sensor name="base_imu" type="imu">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <topic>/imu/data</topic>
+      <gz_frame_id>imu_link</gz_frame_id>
+    </sensor>
+  </gazebo>
+
+  <!-- The chassis remains dynamic. Two centre drive wheels and two low-friction
+       support casters form the physical differential base; the remaining road
+       wheels and track belt are visual. This keeps the whole articulated robot
+       in one physical multibody while preserving the tracked appearance. -->
+
+  <!-- Six road wheels make the tracked running gear readable. The four outer
+       rollers are visual; ros2_control animates them with the two physical
+       centre drive wheels. -->
+  <xacro:macro name="drive_wheel" params="name x y">
+    <link name="${name}_wheel_link">
+      <visual name="road_wheel">
+        <origin rpy="${factory_pi/2} 0 0"/>
+        <geometry><cylinder radius="0.16" length="0.075"/></geometry>
+        <material name="aluminum"/>
+      </visual>
+      <visual name="road_wheel_hub">
+        <origin rpy="${factory_pi/2} 0 0"/>
+        <geometry><cylinder radius="0.065" length="0.095"/></geometry>
+        <material name="factory_blue"/>
+      </visual>
+      <!-- These visible wheels intentionally have no collision. -->
+      <inertial>
+        <mass value="0.10"/>
+        <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      </inertial>
+    </link>
+    <joint name="${name}_wheel_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="${name}_wheel_link"/>
+      <origin xyz="${x} ${y} -0.17"/>
+      <axis xyz="0 1 0"/>
+      <dynamics damping="0.1" friction="0.1"/>
+    </joint>
+  </xacro:macro>
+  <xacro:drive_wheel name="left_front" x="0.30" y="0.35"/>
+  <xacro:drive_wheel name="left_rear" x="-0.30" y="0.35"/>
+  <xacro:drive_wheel name="right_front" x="0.30" y="-0.35"/>
+  <xacro:drive_wheel name="right_rear" x="-0.30" y="-0.35"/>
+
+  <!-- Each centre road wheel provides one real differential-drive contact. -->
+  <xacro:macro name="center_road_wheel" params="side y">
+    <link name="${side}_drive_wheel_link">
+      <visual name="drive_wheel">
+        <origin rpy="${factory_pi/2} 0 0"/>
+        <geometry><cylinder radius="0.16" length="0.075"/></geometry>
+        <material name="aluminum"/>
+      </visual>
+      <visual name="drive_wheel_hub">
+        <origin rpy="${factory_pi/2} 0 0"/>
+        <geometry><cylinder radius="0.070" length="0.095"/></geometry>
+        <material name="safety_orange"/>
+      </visual>
+      <collision name="drive_tire_support">
+        <origin rpy="${factory_pi/2} 0 0"/>
+        <geometry><cylinder radius="0.16" length="0.075"/></geometry>
+      </collision>
+      <inertial>
+        <!-- Physical tire inertia for a 4 kg, 0.16 m radius wheel. -->
+        <mass value="4.0"/>
+        <inertia ixx="0.0275" ixy="0" ixz="0"
+                 iyy="0.0512" iyz="0" izz="0.0275"/>
+      </inertial>
+    </link>
+    <joint name="${side}_drive_wheel_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="${side}_drive_wheel_link"/>
+      <origin xyz="0 ${y} -0.17"/>
+      <axis xyz="0 1 0"/>
+      <limit effort="250" velocity="12"/>
+      <dynamics damping="0.05" friction="0.02"/>
+    </joint>
+    <gazebo reference="${side}_drive_wheel_link">
+      <!-- The centre axle is the only driven floor contact. Because both
+           contact points lie on x=0, pure yaw needs no lateral tire scrub. -->
+      <mu1>1.2</mu1>
+      <mu2>1.2</mu2>
+      <kp>1000000</kp>
+      <kd>10</kd>
+    </gazebo>
+  </xacro:macro>
+  <xacro:center_road_wheel side="left" y="0.35"/>
+  <xacro:center_road_wheel side="right" y="-0.35"/>
+
+  <!-- The belt is an open visual loop instead of a solid black cover, so the
+       three road wheels and two smaller return rollers remain visible. -->
+  <xacro:macro name="track_cover" params="side y">
+    <link name="${side}_track_visual">
+      <visual name="upper_belt">
+        <origin xyz="0 0 0.14"/>
+        <geometry><box size="0.72 0.085 0.04"/></geometry>
+        <material name="track_black"/>
+      </visual>
+      <visual name="lower_belt">
+        <origin xyz="0 0 -0.18"/>
+        <geometry><box size="0.72 0.085 0.04"/></geometry>
+        <material name="track_black"/>
+      </visual>
+      <visual name="front_belt">
+        <origin xyz="0.43 0 -0.02"/>
+        <geometry><box size="0.05 0.085 0.32"/></geometry>
+        <material name="track_black"/>
+      </visual>
+      <visual name="rear_belt">
+        <origin xyz="-0.43 0 -0.02"/>
+        <geometry><box size="0.05 0.085 0.32"/></geometry>
+        <material name="track_black"/>
+      </visual>
+      <visual name="front_return_roller">
+        <origin xyz="0.16 0 0.07" rpy="${factory_pi/2} 0 0"/>
+        <geometry><cylinder radius="0.052" length="0.095"/></geometry>
+        <material name="aluminum"/>
+      </visual>
+      <visual name="rear_return_roller">
+        <origin xyz="-0.16 0 0.07" rpy="${factory_pi/2} 0 0"/>
+        <geometry><cylinder radius="0.052" length="0.095"/></geometry>
+        <material name="aluminum"/>
+      </visual>
+      <!-- Visual only. Floor motion belongs to the centre drive wheels. -->
+      <inertial>
+        <mass value="2.0"/>
+        <inertia ixx="0.014" ixy="0" ixz="0"
+                 iyy="0.145" iyz="0" izz="0.145"/>
+      </inertial>
+    </link>
+    <joint name="${side}_track_visual_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="${side}_track_visual"/>
+      <origin xyz="0 ${y} -0.15"/>
+    </joint>
+    <gazebo reference="${side}_track_visual_joint">
+      <preserveFixedJoint>true</preserveFixedJoint>
+    </gazebo>
+  </xacro:macro>
+  <xacro:track_cover side="left" y="0.35"/>
+  <xacro:track_cover side="right" y="-0.35"/>
+
+  <!-- Two passive casters support pitch. Their swivel and wheel joints are
+       physical, so turnability does not depend on fake low-friction spheres. -->
+  <xacro:macro name="caster_support" params="name x">
+    <link name="${name}_caster_swivel_link">
+      <visual name="caster_fork">
+        <origin xyz="-0.02 0 -0.035"/>
+        <geometry><box size="0.10 0.06 0.06"/></geometry>
+        <material name="aluminum"/>
+      </visual>
+      <inertial>
+        <mass value="0.30"/>
+        <inertia ixx="0.0003" ixy="0" ixz="0"
+                 iyy="0.0003" iyz="0" izz="0.0003"/>
+      </inertial>
+    </link>
+    <joint name="${name}_caster_swivel_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="${name}_caster_swivel_link"/>
+      <origin xyz="${x} 0 -0.18"/>
+      <axis xyz="0 0 1"/>
+      <limit effort="20" velocity="20"/>
+      <dynamics damping="0.01" friction="0.002"/>
+    </joint>
+
+    <link name="${name}_caster_wheel_link">
+      <visual name="caster_wheel">
+        <origin rpy="${factory_pi/2} 0 0"/>
+        <geometry><cylinder radius="0.07" length="0.045"/></geometry>
+        <material name="track_black"/>
+      </visual>
+      <collision name="caster_wheel_support">
+        <origin rpy="${factory_pi/2} 0 0"/>
+        <geometry><cylinder radius="0.07" length="0.045"/></geometry>
+      </collision>
+      <inertial>
+        <mass value="0.30"/>
+        <inertia ixx="0.0005" ixy="0" ixz="0"
+                 iyy="0.0005" iyz="0" izz="0.0005"/>
+      </inertial>
+    </link>
+    <joint name="${name}_caster_wheel_joint" type="continuous">
+      <parent link="${name}_caster_swivel_link"/>
+      <child link="${name}_caster_wheel_link"/>
+      <!-- The 70 mm wheel bottom matches the 160 mm drive-wheel bottom. -->
+      <origin xyz="-0.04 0 -0.08"/>
+      <axis xyz="0 1 0"/>
+      <limit effort="20" velocity="30"/>
+      <dynamics damping="0.01" friction="0.001"/>
+    </joint>
+    <gazebo reference="${name}_caster_wheel_link">
+      <!-- A pneumatic caster rolls along local X but must not behave like an
+           isotropic rubber block while its swivel aligns. This anisotropic
+           Coulomb contact is the physical wheel model, not a pose override. -->
+      <mu1>0.9</mu1>
+      <mu2>0.03</mu2>
+      <fdir1>1 0 0</fdir1>
+      <kp>500000</kp>
+      <kd>5</kd>
+    </gazebo>
+  </xacro:macro>
+  <xacro:caster_support name="front" x="0.36"/>
+  <xacro:caster_support name="rear" x="-0.36"/>
+
+  <link name="arm_mount">
+    <visual name="pedestal">
+      <geometry><cylinder radius="0.19" length="0.34"/></geometry>
+      <material name="safety_orange"/>
+    </visual>
+    <visual name="mounting_plate">
+      <origin xyz="0 0 0.18"/>
+      <geometry><cylinder radius="0.23" length="0.025"/></geometry>
+      <material name="aluminum"/>
+    </visual>
+    <collision><geometry><cylinder radius="0.19" length="0.34"/></geometry></collision>
+    <inertial><mass value="8"/><inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/></inertial>
+  </link>
+  <joint name="arm_mount_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="arm_mount"/>
+    <!-- A raised, front-biased pedestal keeps the wrist outside the chassis
+         collision envelope while entering low side-grasp corridors. -->
+    <origin xyz="0.12 0 0.34"/>
+  </joint>
+
+  <xacro:ur_robot
+    name="factory_ur5e"
+    tf_prefix="arm_"
+    parent="arm_mount"
+    joint_limits_parameters_file="$(find ur_description)/config/ur5e/joint_limits.yaml"
+    kinematics_parameters_file="$(find ur_description)/config/ur5e/default_kinematics.yaml"
+    physical_parameters_file="$(find ur_description)/config/ur5e/physical_parameters.yaml"
+    visual_parameters_file="$(find ur_description)/config/ur5e/visual_parameters.yaml"
+    safety_limits="true"
+    safety_pos_margin="0.10"
+    safety_k_position="20"
+    force_abs_paths="true">
+    <origin xyz="0 0 0.19" rpy="0 0 0"/>
+  </xacro:ur_robot>
+
+  <!-- Keep the official adapter appearance, but use a convex physical
+       mounting collar. The upstream triangle-mesh collision overlaps the
+       custom straight finger rails and can lock a prismatic joint after
+       roughly 1 mm in Bullet. -->
+  <joint name="ur_to_robotiq_joint" type="fixed">
+    <parent link="arm_tool0"/>
+    <child link="ur_to_robotiq_link"/>
+    <origin xyz="0 0 0" rpy="0 0 ${factory_pi/2}"/>
+  </joint>
+  <link name="ur_to_robotiq_link">
+    <visual name="official_adapter_visual">
+      <geometry>
+        <mesh filename="package://robotiq_description/meshes/visual/ur_to_robotiq_adapter.dae"/>
+      </geometry>
+    </visual>
+    <collision name="adapter_collar_collision">
+      <origin xyz="0 0 0.005"/>
+      <geometry><cylinder radius="0.040" length="0.020"/></geometry>
+    </collision>
+    <inertial>
+      <origin xyz="0 0 0.005"/>
+      <mass value="0.10"/>
+      <inertia ixx="0.00005" ixy="0" ixz="0"
+               iyy="0.00005" iyz="0" izz="0.00008"/>
+    </inertial>
+  </link>
+  <joint name="gripper_side_joint" type="fixed">
+    <parent link="ur_to_robotiq_link"/>
+    <child link="gripper_mount_link"/>
+    <origin xyz="0 0 0.011"/>
+  </joint>
+  <link name="gripper_mount_link"/>
+
+
+  <!-- Force-balanced industrial parallel gripper. Both mirrored rails are
+       physical joints driven by equal effort. Position servos are deliberately
+       not used during contact because one finger may touch before the other;
+       tactile identity, measured aperture and symmetry prove the final hold.
+       Convex boxes are shared by MoveIt and Gazebo, so the planned and
+       simulated collision geometry agree. -->
+  <link name="gripper_parallel_base_link">
+    <visual name="robotiq_base_visual">
+      <geometry>
+        <mesh filename="package://robotiq_description/meshes/visual/robotiq_base.dae"/>
+      </geometry>
+    </visual>
+    <collision name="gripper_base_collision">
+      <origin xyz="0 0 0.030"/>
+      <geometry><cylinder radius="0.050" length="0.060"/></geometry>
+    </collision>
+    <inertial>
+      <origin xyz="0 0 0.030"/>
+      <mass value="0.70"/>
+      <inertia ixx="0.0010" ixy="0" ixz="0"
+               iyy="0.0010" iyz="0" izz="0.0012"/>
+    </inertial>
+  </link>
+  <joint name="gripper_parallel_mount_joint" type="fixed">
+    <parent link="gripper_mount_link"/>
+    <child link="gripper_parallel_base_link"/>
+  </joint>
+  <!-- Keep the mechanism base as a real Gazebo link. Otherwise URDF-to-SDF
+       fixed-joint reduction rewrites both prismatic rails relative to the
+       wrist and breaks their symmetric physical response in DART. -->
+  <gazebo reference="gripper_parallel_mount_joint">
+    <preserveFixedJoint>true</preserveFixedJoint>
+  </gazebo>
+
+  <xacro:macro name="parallel_finger" params="side x joint_yaw pad_x groove_sign">
+    <link name="gripper_${side}_finger_tip_link">
+      <visual name="finger_body_visual">
+        <origin xyz="0 0 0.105"/>
+        <geometry><box size="0.018 0.034 0.120"/></geometry>
+        <material name="track_black"/>
+      </visual>
+      <visual name="finger_pad_visual">
+        <origin xyz="${pad_x} 0 0.150"/>
+        <!-- A 60 mm-tall replaceable jaw plate grips half of the 120 mm
+             stock height, providing a real anti-tilt moment arm. -->
+        <geometry><box size="0.006 0.060 0.060"/></geometry>
+        <material name="safety_orange"/>
+      </visual>
+      <!-- Keep the physical sliding rail above the 60 mm-high palm.
+           The longer visual body may overlap its fixed housing, but a moving
+           collision body must not jam against that housing. -->
+      <collision name="finger_body_collision">
+        <origin xyz="0 0 0.120"/>
+        <geometry><box size="0.018 0.034 0.080"/></geometry>
+      </collision>
+      <!-- Two mirrored, angled soft-jaw faces form a real concave V in the
+           closing-axis / approach-axis plane. Unlike parallel protruding
+           rails, both faces generate a restoring normal force when the
+           50 mm round stock starts to roll. The orange plate above remains
+           visual-only; these convex faces are the complete contact model. -->
+      <visual name="finger_pad_lower_v_face_visual">
+        <origin xyz="${groove_sign * 0.019} 0 0.141"
+                rpy="0 ${-groove_sign * 0.78539816339} 0"/>
+        <geometry><box size="0.006 0.060 0.0255"/></geometry>
+        <material name="safety_orange"/>
+      </visual>
+      <visual name="finger_pad_upper_v_face_visual">
+        <origin xyz="${groove_sign * 0.019} 0 0.159"
+                rpy="0 ${groove_sign * 0.78539816339} 0"/>
+        <geometry><box size="0.006 0.060 0.0255"/></geometry>
+        <material name="safety_orange"/>
+      </visual>
+      <collision name="finger_pad_lower_v_face_collision">
+        <origin xyz="${groove_sign * 0.019} 0 0.141"
+                rpy="0 ${-groove_sign * 0.78539816339} 0"/>
+        <geometry><box size="0.006 0.060 0.0255"/></geometry>
+      </collision>
+      <collision name="finger_pad_upper_v_face_collision">
+        <origin xyz="${groove_sign * 0.019} 0 0.159"
+                rpy="0 ${groove_sign * 0.78539816339} 0"/>
+        <geometry><box size="0.006 0.060 0.0255"/></geometry>
+      </collision>
+      <inertial>
+        <origin xyz="0 0 0.105"/>
+        <mass value="0.10"/>
+        <inertia ixx="0.00014" ixy="0" ixz="0"
+                 iyy="0.00014" iyz="0" izz="0.00002"/>
+      </inertial>
+    </link>
+    <joint name="gripper_${side}_finger_joint" type="prismatic">
+      <parent link="gripper_parallel_base_link"/>
+      <child link="gripper_${side}_finger_tip_link"/>
+      <origin xyz="${x} 0 0" rpy="0 0 ${joint_yaw}"/>
+      <axis xyz="1 0 0"/>
+      <limit lower="0.0" upper="0.040" effort="40.0" velocity="0.10"/>
+      <dynamics damping="1.0" friction="0.05"/>
+    </joint>
+  </xacro:macro>
+  <!-- At q=0 the inner faces are 112 mm apart. At q=31 mm they contact
+       the 50 mm stock from opposite sides. -->
+  <!-- Both actuators now use the same positive local axis and 0..40 mm
+       travel. Rotating the left joint frame mirrors its physical direction
+       without relying on a negative prismatic axis. -->
+  <xacro:parallel_finger side="right" x="-0.065" joint_yaw="0"
+                           pad_x="0.012" groove_sign="1"/>
+  <xacro:parallel_finger side="left" x="0.065" joint_yaw="${factory_pi}"
+                           pad_x="0.012" groove_sign="1"/>
+  <gazebo reference="gripper_left_finger_tip_link">
+    <mu1>2.0</mu1><mu2>2.0</mu2>
+    <kp>200000</kp><kd>10</kd><maxVel>0.05</maxVel><minDepth>0.001</minDepth>
+  </gazebo>
+  <gazebo reference="gripper_right_finger_tip_link">
+    <mu1>2.0</mu1><mu2>2.0</mu2>
+    <kp>200000</kp><kd>10</kd><maxVel>0.05</maxVel><minDepth>0.001</minDepth>
+  </gazebo>
+
+  <!-- Control point at the center between the fingertips. Motion planning
+       targets this frame instead of the UR flange. -->
+  <link name="gripper_tcp"/>
+  <joint name="gripper_tcp_joint" type="fixed">
+    <parent link="gripper_parallel_base_link"/><child link="gripper_tcp"/><origin xyz="0 0 0.15"/>
+  </joint>
+  <!-- Each workpiece publishes all of its physical contacts.  The verifier
+       classifies the parent fingertip name of these lumped pad collisions,
+       so a second pair of contact sensors would duplicate the same evidence. -->
+
+
+  <link name="sensor_mast">
+    <!-- One continuous structural member runs from the deck flange to the
+         station-camera boom. Keeping this as one box makes the load path
+         visible and gives Gazebo the same connected collision geometry. -->
+    <visual name="sensor_mast_column">
+      <origin xyz="0 0 0.10"/>
+      <geometry><box size="0.08 0.08 1.05"/></geometry>
+      <material name="factory_blue"/>
+    </visual>
+    <!-- Make the fixed mast-to-deck connection visible as well as physical. -->
+    <visual name="mounting_flange">
+      <origin xyz="0 0 -0.33"/>
+      <geometry><box size="0.18 0.20 0.03"/></geometry>
+      <material name="factory_blue"/>
+    </visual>
+    <visual name="camera_bracket">
+      <!-- A real cross-bracket moves the camera sight line outside the arm's
+           carry plane while keeping the sensor physically supported. -->
+      <origin xyz="0 -0.15 0.32"/>
+      <geometry><box size="0.10 0.76 0.025"/></geometry>
+      <material name="factory_blue"/>
+    </visual>
+    <visual name="tag_camera_boom">
+      <!-- A rigid forward boom places the station camera ahead of the arm.
+           Looking outward from the base prevents the manipulator itself from
+           hiding the station marker during navigation and loaded transit. -->
+      <origin xyz="0.325 0 0.60"/>
+      <geometry><box size="0.65 0.06 0.06"/></geometry>
+      <material name="factory_blue"/>
+    </visual>
+    <collision name="sensor_mast_column_collision">
+      <origin xyz="0 0 0.10"/>
+      <geometry><box size="0.08 0.08 1.05"/></geometry>
+    </collision>
+    <collision name="mounting_flange_collision">
+      <origin xyz="0 0 -0.33"/>
+      <geometry><box size="0.18 0.20 0.03"/></geometry>
+    </collision>
+    <collision name="camera_bracket_collision">
+      <origin xyz="0 -0.15 0.32"/>
+      <geometry><box size="0.10 0.76 0.025"/></geometry>
+    </collision>
+    <collision name="tag_camera_boom_collision">
+      <origin xyz="0.325 0 0.60"/>
+      <geometry><box size="0.65 0.06 0.06"/></geometry>
+    </collision>
+    <inertial><mass value="1.6"/><inertia ixx="0.10" ixy="0" ixz="0" iyy="0.10" iyz="0" izz="0.006"/></inertial>
+  </link>
+  <joint name="sensor_mast_joint" type="fixed">
+    <!-- Lateral placement keeps the mast outside the arm's stowed centerline
+         while the rear mounting position clears the grasp workspace. -->
+    <parent link="base_link"/><child link="sensor_mast"/><origin xyz="-0.35 -0.30 0.58"/>
+  </joint>
+  <!-- Keep sensor-bearing fixed links as real Gazebo entities. When they are
+       lumped into the canonical base link, TrackedVehicle motion updates the
+       physics body but Harmonic's rendering sensors retain their spawn pose. -->
+  <gazebo reference="sensor_mast_joint">
+    <preserveFixedJoint>true</preserveFixedJoint>
+  </gazebo>
+  <link name="lidar_link">
+    <visual name="mount">
+      <origin xyz="-0.055 0 -0.015"/>
+      <geometry><box size="0.11 0.10 0.08"/></geometry>
+      <material name="factory_blue"/>
+    </visual>
+    <visual name="housing">
+      <origin xyz="0 0 0.005"/>
+      <geometry><cylinder radius="0.07" length="0.055"/></geometry>
+      <material name="track_black"/>
+    </visual>
+    <collision name="mount_collision">
+      <origin xyz="-0.055 0 -0.015"/>
+      <geometry><box size="0.11 0.10 0.08"/></geometry>
+    </collision>
+    <collision name="housing_collision">
+      <origin xyz="0 0 0.005"/>
+      <geometry><cylinder radius="0.07" length="0.055"/></geometry>
+    </collision>
+    <inertial><mass value="0.2"/><inertia ixx="0.0003" ixy="0" ixz="0" iyy="0.0003" iyz="0" izz="0.0005"/></inertial>
+  </link>
+  <joint name="lidar_joint" type="fixed">
+    <!-- Share the mast's physical mounting structure instead of occupying the
+         arm's center-front grasp corridor. Its 360 samples cover 270 degrees;
+         the robot body is removed by the existing laser self-filter. -->
+    <parent link="sensor_mast"/><child link="lidar_link"/>
+    <origin xyz="0 0 -0.35"/>
+  </joint>
+  <gazebo reference="lidar_joint">
+    <preserveFixedJoint>true</preserveFixedJoint>
+  </gazebo>
+  <link name="lidar_scan_frame"/>
+  <joint name="lidar_scan_joint" type="fixed">
+    <parent link="lidar_link"/><child link="lidar_scan_frame"/><origin xyz="0 0 0.045"/>
+  </joint>
+  <link name="camera_link">
+    <visual><geometry><box size="0.08 0.16 0.06"/></geometry><material name="track_black"/></visual>
+    <collision><geometry><box size="0.08 0.16 0.06"/></geometry></collision>
+    <inertial><mass value="0.25"/><inertia ixx="0.0004" ixy="0" ixz="0" iyy="0.0004" iyz="0" izz="0.0006"/></inertial>
+  </link>
+  <joint name="camera_joint" type="fixed">
+    <!-- Offset the sensor from the carry corridor and pitch it down by ten
+         degrees. The wide field of view still contains station tags while
+         exposing the raw-bin work surface to depth perception. -->
+    <parent link="sensor_mast"/><child link="camera_link"/>
+    <origin xyz="0.04 -0.35 0.32" rpy="0 0.18 0.65"/>
+  </joint>
+  <gazebo reference="camera_joint">
+    <preserveFixedJoint>true</preserveFixedJoint>
+  </gazebo>
+  <link name="camera_optical_frame"/>
+  <joint name="camera_optical_joint" type="fixed">
+    <parent link="camera_link"/><child link="camera_optical_frame"/>
+    <origin rpy="-${factory_pi/2} 0 -${factory_pi/2}"/>
+  </joint>
+  <!-- A second, physically supported RGB-D view breaks line-of-sight
+       occlusions in an unordered bin. Both cameras report in base_link and
+       the perception layer fuses only fresh, spatially matching candidates. -->
+  <link name="camera_aux_link">
+    <visual><geometry><box size="0.08 0.16 0.06"/></geometry><material name="track_black"/></visual>
+    <collision><geometry><box size="0.08 0.16 0.06"/></geometry></collision>
+    <inertial><mass value="0.25"/><inertia ixx="0.0004" ixy="0" ixz="0" iyy="0.0004" iyz="0" izz="0.0006"/></inertial>
+  </link>
+  <joint name="camera_aux_joint" type="fixed">
+    <!-- Complement the right-side oblique view with a near-centre view. -->
+    <parent link="sensor_mast"/><child link="camera_aux_link"/>
+    <origin xyz="0.04 0.15 0.32" rpy="0 0.18 0.14"/>
+  </joint>
+  <gazebo reference="camera_aux_joint">
+    <preserveFixedJoint>true</preserveFixedJoint>
+  </gazebo>
+  <link name="camera_aux_optical_frame"/>
+  <joint name="camera_aux_optical_joint" type="fixed">
+    <parent link="camera_aux_link"/><child link="camera_aux_optical_frame"/>
+    <origin rpy="-${factory_pi/2} 0 -${factory_pi/2}"/>
+  </joint>
+
+  <link name="tag_camera_link">
+    <visual>
+      <geometry><box size="0.08 0.16 0.06"/></geometry>
+      <material name="safety_orange"/>
+    </visual>
+    <collision><geometry><box size="0.08 0.16 0.06"/></geometry></collision>
+    <inertial><mass value="0.20"/><inertia ixx="0.0003" ixy="0" ixz="0" iyy="0.0003" iyz="0" izz="0.0005"/></inertial>
+  </link>
+  <joint name="tag_camera_joint" type="fixed">
+    <!-- All surveyed station markers face the robot's local +X approach.
+         The camera therefore looks straight ahead and 0.60 rad downward;
+         its small right-side offset leaves the arm's centre plane clear. -->
+    <parent link="sensor_mast"/><child link="tag_camera_link"/>
+    <origin xyz="0.65 0 0.60" rpy="0 0.60 0"/>
+  </joint>
+  <gazebo reference="tag_camera_joint">
+    <preserveFixedJoint>true</preserveFixedJoint>
+  </gazebo>
+  <link name="tag_camera_optical_frame"/>
+  <joint name="tag_camera_optical_joint" type="fixed">
+    <parent link="tag_camera_link"/><child link="tag_camera_optical_frame"/>
+    <origin rpy="-${factory_pi/2} 0 -${factory_pi/2}"/>
+  </joint>
+
+  <ros2_control name="FactoryRobotSystem" type="system">
+    <hardware><plugin>gz_ros2_control/GazeboSimSystem</plugin></hardware>
+    <xacro:macro name="velocity_joint" params="name">
+      <joint name="${name}">
+        <command_interface name="velocity"><param name="min">-12</param><param name="max">12</param></command_interface>
+        <state_interface name="position"/><state_interface name="velocity"/>
+      </joint>
+    </xacro:macro>
+    <!-- ros2_control animates all six road wheels, but only the two centre
+         drive-wheel links have floor collision. The outer four wheels and
+         belt geometry remain a tracked visual shell. -->
+    <xacro:velocity_joint name="left_drive_wheel_joint"/>
+    <xacro:velocity_joint name="left_front_wheel_joint"/>
+    <xacro:velocity_joint name="left_rear_wheel_joint"/>
+    <xacro:velocity_joint name="right_drive_wheel_joint"/>
+    <xacro:velocity_joint name="right_front_wheel_joint"/>
+    <xacro:velocity_joint name="right_rear_wheel_joint"/>
+
+    <!-- Passive caster joints are solved by Gazebo physics. Expose their
+         measured state without a command interface so robot_state_publisher
+         and MoveIt receive a complete robot state. -->
+    <xacro:macro name="passive_state_joint" params="name">
+      <joint name="${name}">
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
+    </xacro:macro>
+    <xacro:passive_state_joint name="front_caster_swivel_joint"/>
+    <xacro:passive_state_joint name="front_caster_wheel_joint"/>
+    <xacro:passive_state_joint name="rear_caster_swivel_joint"/>
+    <xacro:passive_state_joint name="rear_caster_wheel_joint"/>
+    <xacro:passive_state_joint name="charging_electrode_joint"/>
+
+    <xacro:macro name="position_joint" params="name lower_limit upper_limit initial_value:=0.0">
+      <joint name="${name}">
+        <command_interface name="position"><param name="min">${lower_limit}</param><param name="max">${upper_limit}</param></command_interface>
+        <state_interface name="position">
+          <param name="initial_value">${initial_value}</param>
+        </state_interface>
+        <state_interface name="velocity"/>
+      </joint>
+    </xacro:macro>
+
+    <!-- Match the limits in ur_description/config/ur5e/joint_limits.yaml.
+         Restricting every joint to +/- pi caused gz_ros2_control to clamp
+         otherwise valid Pilz wrist trajectories before reaching the part. -->
+    <xacro:position_joint name="arm_shoulder_pan_joint" lower_limit="-${2*factory_pi}" upper_limit="${2*factory_pi}" initial_value="0.0"/>
+    <xacro:position_joint name="arm_shoulder_lift_joint" lower_limit="-${2*factory_pi}" upper_limit="${2*factory_pi}" initial_value="-1.5708"/>
+    <xacro:position_joint name="arm_elbow_joint" lower_limit="-${factory_pi}" upper_limit="${factory_pi}" initial_value="1.5708"/>
+    <xacro:position_joint name="arm_wrist_1_joint" lower_limit="-${2*factory_pi}" upper_limit="${2*factory_pi}" initial_value="-1.5708"/>
+    <xacro:position_joint name="arm_wrist_2_joint" lower_limit="-${2*factory_pi}" upper_limit="${2*factory_pi}" initial_value="-1.5708"/>
+    <xacro:position_joint name="arm_wrist_3_joint" lower_limit="-${2*factory_pi}" upper_limit="${2*factory_pi}"/>
+  </ros2_control>
+
+  <!-- The gripper is an independent hardware component, as it would be on a
+       real robot's Modbus / tool-I/O bus. Both rails expose bounded effort
+       interfaces so contact force, rather than a conflicting position target,
+       determines their final travel around the workpiece. -->
+  <ros2_control name="FactoryGripperSystem" type="system">
+    <hardware><plugin>gz_ros2_control/GazeboSimSystem</plugin></hardware>
+    <!-- The controller publishes equal effort to both mirrored joint frames;
+         independent state feedback is required for asymmetry detection. -->
+    <joint name="gripper_right_finger_joint">
+      <command_interface name="effort"><param name="min">-40.0</param><param name="max">40.0</param></command_interface>
+      <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="gripper_left_finger_joint">
+      <command_interface name="effort"><param name="min">-40.0</param><param name="max">40.0</param></command_interface>
+      <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+  </ros2_control>
+
+  <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(find mobile_manipulator_description)/config/controllers.yaml</parameters>
+      <!-- Gazebo's position interface is a first-order velocity servo.  A
+           sub-unity gain keeps it stable while reducing trajectory lag. -->
+      <position_proportional_gain>1.0</position_proportional_gain>
+      <!-- Hold unclaimed joints during the controller startup window, before
+           the trajectory controller owns the six arm position interfaces. -->
+      <hold_joints>true</hold_joints>
+    </plugin>
+    <!-- Independent simulator truth. The controller odometry is intentionally
+         kept separate so wheel calibration can compare two measurements. -->
+    <plugin filename="gz-sim-odometry-publisher-system"
+            name="gz::sim::systems::OdometryPublisher">
+      <odom_frame>world</odom_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
+      <!-- Keep odometry TF separate from PosePublisher's physical-link
+           vector. Both systems default to /model/factory_robot/pose. -->
+      <tf_topic>/model/factory_robot/odometry_pose</tf_topic>
+      <odom_publish_frequency>30</odom_publish_frequency>
+    </plugin>
+
+    <!-- Gazebo link truth is independent of wheel odometry and AMCL. It lets
+         manipulation verify that a workpiece keeps its physical offset from
+         the gripper even when the mobile base slips under arm reaction loads. -->
+    <plugin filename="gz-sim-pose-publisher-system"
+            name="gz::sim::systems::PosePublisher">
+      <publish_model_pose>true</publish_model_pose>
+      <publish_link_pose>true</publish_link_pose>
+      <publish_sensor_pose>false</publish_sensor_pose>
+      <publish_collision_pose>false</publish_collision_pose>
+      <publish_visual_pose>false</publish_visual_pose>
+      <use_pose_vector_msg>true</use_pose_vector_msg>
+      <update_frequency>20</update_frequency>
+    </plugin>
+
+    <!-- The passive casters carry vertical load but must not impose a second
+         differential-drive constraint. DART's official WheelSlip system gives
+         their contacts high longitudinal and lateral compliance; the centre
+         wheels remain the only tractive contacts. -->
+    <plugin filename="gz-sim-wheel-slip-system"
+            name="gz::sim::systems::WheelSlip">
+      <wheel link_name="front_caster_wheel_link">
+        <wheel_radius>0.07</wheel_radius>
+        <wheel_normal_force>500</wheel_normal_force>
+        <slip_compliance_lateral>1.0</slip_compliance_lateral>
+        <slip_compliance_longitudinal>1.0</slip_compliance_longitudinal>
+      </wheel>
+      <wheel link_name="rear_caster_wheel_link">
+        <wheel_radius>0.07</wheel_radius>
+        <wheel_normal_force>500</wheel_normal_force>
+        <slip_compliance_lateral>1.0</slip_compliance_lateral>
+        <slip_compliance_longitudinal>1.0</slip_compliance_longitudinal>
+      </wheel>
+    </plugin>
+
+  </gazebo>
+  <xacro:if value="$(arg enable_perception)">
+  <gazebo reference="lidar_link">
+    <sensor name="lidar" type="gpu_lidar">
+      <topic>scan</topic><update_rate>10</update_rate>
+      <pose>0 0 0.045 0 0 0</pose>
+      <gz_frame_id>lidar_scan_frame</gz_frame_id>
+      <lidar>
+        <scan>
+          <horizontal>
+            <samples>360</samples>
+            <resolution>1</resolution>
+            <min_angle>-${factory_pi*0.75}</min_angle>
+            <max_angle>${factory_pi*0.75}</max_angle>
+          </horizontal>
+          <vertical>
+            <samples>1</samples>
+            <resolution>1</resolution>
+            <min_angle>0.0</min_angle>
+            <max_angle>0.0</max_angle>
+          </vertical>
+        </scan>
+        <range>
+          <min>0.10</min>
+          <max>20.0</max>
+          <resolution>0.01</resolution>
+        </range>
+      </lidar>
+      <always_on>true</always_on><visualize>false</visualize>
+    </sensor>
+  </gazebo>
+  <gazebo reference="camera_link">
+    <sensor name="front_rgbd" type="rgbd_camera">
+      <topic>camera</topic><update_rate>5</update_rate>
+      <gz_frame_id>camera_optical_frame</gz_frame_id>
+      <camera><horizontal_fov>1.7453</horizontal_fov><image><width>424</width><height>320</height><format>R8G8B8</format></image><clip><near>0.1</near><far>8.0</far></clip></camera>
+      <always_on>true</always_on>
+    </sensor>
+  </gazebo>
+  <gazebo reference="tag_camera_link">
+    <sensor name="station_tag_camera" type="camera">
+      <!-- AprilTag docking needs calibrated color images, not a second dense
+           depth stream. A color-only camera leaves more simulation time for
+           navigation and contact physics during the production cycle. The
+           4:3 image keeps the complete 160 mm CNC marker inside the vertical
+           field of view during the last 50 mm of approach; the former 16:9
+           crop lost its black border before the 20 mm docking contract. -->
+      <topic>tag_camera</topic><update_rate>5</update_rate>
+      <gz_frame_id>tag_camera_optical_frame</gz_frame_id>
+      <camera><horizontal_fov>1.2217</horizontal_fov><image><width>640</width><height>480</height><format>R8G8B8</format></image><clip><near>0.1</near><far>8.0</far></clip></camera>
+      <always_on>true</always_on>
+    </sensor>
+  </gazebo>
+  <gazebo reference="camera_aux_link">
+    <sensor name="aux_rgbd" type="rgbd_camera">
+      <topic>camera_aux</topic><update_rate>5</update_rate>
+      <gz_frame_id>camera_aux_optical_frame</gz_frame_id>
+      <camera><horizontal_fov>1.7453</horizontal_fov><image><width>424</width><height>320</height><format>R8G8B8</format></image><clip><near>0.1</near><far>8.0</far></clip></camera>
+      <always_on>true</always_on>
+    </sensor>
+  </gazebo>
+  </xacro:if>
+</robot>

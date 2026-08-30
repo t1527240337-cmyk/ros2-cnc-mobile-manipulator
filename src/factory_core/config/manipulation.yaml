@@ -1,0 +1,88 @@
+stations:
+  raw_bin:
+    role: source
+    # In the upstream Robotiq 2F-85 model the fingers close along tool X,
+    # which this orientation maps to horizontal base Y. Descend vertically
+    # around the selected cylinder so open fingers do not cross a neighbouring
+    # workpiece in the unordered source bin before the grasp closes.
+    approach_offset: [0.0, 0.0, 0.10]
+    lift_offset: [0.0, 0.0, 0.16]
+    # Grip 5 mm above the measured cylinder centre. The 60 mm-high workpiece
+    # jaws then span both sides of the centre plane while retaining 35 mm
+    # clearance from the source support.
+    grasp_offset: [0.0, 0.0, 0.005]
+    # RGB-D selects one stable candidate inside the reachable work volume.
+    # This pose supplies only the search centre and gripper orientation; it
+    # does not identify a workpiece or a fixed tray slot.
+    source_selection_pose: {frame_id: base_link, position: [0.782, 0.0, 0.254], orientation: [0.5, 0.5, 0.5, 0.5]}
+
+  finished_bin:
+    role: sink
+    # Approach directly above the selected slot, then descend vertically.
+    # A simultaneous +X/down insertion makes the cylinder strike the table
+    # edge before it reaches the selected horizontal coordinate.
+    approach_offset: [0.0, 0.0, 0.10]
+    lift_offset: [0.0, 0.0, 0.16]
+    # Contact-calibrated supported part centre. In v18 the table base stopped
+    # the held cylinder at TCP z=0.320 m; subtracting the +5 mm grasp offset
+    # gives a centre datum of z=0.315 m. This replaces the former incorrect
+    # base_link-height assumption rather than widening the contact envelope.
+    grasp_offset: [0.0, 0.0, 0.05]
+    placement_slots:
+      - slot_id: 1
+        pose: {frame_id: base_link, position: [0.72, -0.20, 0.315], orientation: [0.5, 0.5, 0.5, 0.5]}
+      - slot_id: 2
+        pose: {frame_id: base_link, position: [0.72, 0.05, 0.315], orientation: [0.5, 0.5, 0.5, 0.5]}
+      - slot_id: 3
+        pose: {frame_id: base_link, position: [0.72, 0.30, 0.315], orientation: [0.5, 0.5, 0.5, 0.5]}
+      - slot_id: 4
+        # Redundant near-side slot remains visible when the arm hides slot 3.
+        pose: {frame_id: base_link, position: [0.72, -0.32, 0.315], orientation: [0.5, 0.5, 0.5, 0.5]}
+
+  # AprilTag docking gives every identical CNC the same fixture pose in
+  # base_link. The chassis keeps 70 mm clearance from the enclosure and the
+  # front-mounted vise remains inside the UR5e working envelope.
+  machine_1:
+    role: machine
+    # Enter the open vise from above. A horizontal pre-approach would already
+    # overlap the 300 mm fixture base before final insertion.
+    approach_offset: [0.0, 0.0, 0.10]
+    lift_offset: [0.0, 0.0, 0.16]
+    # The 60 mm workpiece jaw straddles the cylinder centre and retains
+    # 35 mm clearance above the fixture. This resists tilt without allowing
+    # either finger to satisfy the fixture support contact.
+    grasp_offset: [0.0, 0.0, 0.005]
+    # Measured once from the identical CNC model. At runtime the detected Tag
+    # transforms the front loading datum into the current base_link frame.
+    # This datum is 100 mm in front of the vise centre, remains on its
+    # support surface, and is the same fixed point for load and unload.
+    # Nominal x is the repeated v13/v14 Tag-to-fixture observation; runtime
+    # vision must still pass the independent 30 mm agreement gate.
+    fixture_reference:
+      frame_id: machine_1_tag
+      position: [0.365, -0.045, -0.240]
+    # Physical fixture-base contact calibrates the supported part-centre at
+    # z=0.971 m: the +5 mm grasp offset places the TCP at z=0.976 m.
+    # The former 0.940 m datum pressed 31 mm into the rigid fixture and made
+    # trajectory completion depend on physics-engine compliance.
+    machine_workpiece_pose: {frame_id: base_link, position: [0.816, 0.0, 0.971], orientation: [0.5, 0.5, 0.5, 0.5]}
+
+  machine_2:
+    role: machine
+    approach_offset: [0.0, 0.0, 0.10]
+    lift_offset: [0.0, 0.0, 0.16]
+    grasp_offset: [0.0, 0.0, 0.005]
+    fixture_reference:
+      frame_id: machine_2_tag
+      position: [0.365, -0.045, -0.240]
+    machine_workpiece_pose: {frame_id: base_link, position: [0.816, 0.0, 0.971], orientation: [0.5, 0.5, 0.5, 0.5]}
+
+  machine_3:
+    role: machine
+    approach_offset: [0.0, 0.0, 0.10]
+    lift_offset: [0.0, 0.0, 0.16]
+    grasp_offset: [0.0, 0.0, 0.005]
+    fixture_reference:
+      frame_id: machine_3_tag
+      position: [0.365, -0.045, -0.240]
+    machine_workpiece_pose: {frame_id: base_link, position: [0.816, 0.0, 0.971], orientation: [0.5, 0.5, 0.5, 0.5]}

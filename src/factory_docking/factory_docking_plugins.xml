@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<library path="factory_docking_plugins">
+  <class
+    name="factory_docking::StrictNonChargingDock"
+    type="factory_docking::StrictNonChargingDock"
+    base_class_type="opennav_docking_core::ChargingDock">
+    <description>
+      A Nav2 non-charging dock that requires both position and heading convergence.
+    </description>
+  </class>
+</library>

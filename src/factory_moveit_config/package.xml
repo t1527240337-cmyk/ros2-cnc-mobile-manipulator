@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>factory_moveit_config</name>
+  <version>0.1.0</version>
+  <description>MoveIt 2 configuration for the factory mobile manipulator arm.</description>
+  <maintainer email="maintainer@example.com">Factory Robot Maintainer</maintainer>
+  <license>Apache-2.0</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <exec_depend>mobile_manipulator_description</exec_depend>
+  <exec_depend>moveit_configs_utils</exec_depend>
+  <exec_depend>moveit_ros_move_group</exec_depend>
+  <exec_depend>moveit_kinematics</exec_depend>
+  <exec_depend>moveit_planners_ompl</exec_depend>
+  <exec_depend>pilz_industrial_motion_planner</exec_depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>

@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="workpiece">
+    <link name="part">
+      <inertial>
+        <mass>0.6</mass>
+        <inertia>
+          <ixx>0.002</ixx>
+          <iyy>0.002</iyy>
+          <izz>0.001</izz>
+        </inertia>
+      </inertial>
+      <collision name="collision">
+        <geometry>
+          <cylinder>
+            <!-- 50 mm stock leaves 17 mm of open-finger clearance per side in the
+                 85 mm 2F-85 opening, so small approach misalignment no
+                 longer shoves the part before the pads land. -->
+            <radius>0.025</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+        <surface>
+          <friction>
+            <!-- Match the 2.0 rubber-pad material used by the gripper so
+                 contact behaviour does not depend on which body supplies the
+                 friction coefficient for the pair. -->
+            <ode>
+              <mu>2.0</mu>
+              <mu2>2.0</mu2>
+            </ode>
+            <bullet>
+              <friction>2.0</friction>
+              <friction2>2.0</friction2>
+            </bullet>
+          </friction>
+          <contact>
+            <ode>
+              <kp>200000</kp>
+              <kd>10</kd>
+              <max_vel>0.05</max_vel>
+              <min_depth>0.001</min_depth>
+            </ode>
+          </contact>
+        </surface>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <cylinder>
+            <radius>0.025</radius>
+            <length>0.12</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <diffuse>0.72 0.72 0.74 1</diffuse>
+        </material>
+      </visual>
+      <!-- Simulation truth reports every collision involving this workpiece.
+           Verification still requires both gripper sides; table contact alone
+           can never satisfy the grasp condition. -->
+      <sensor name="physical_contact" type="contact">
+        <always_on>true</always_on>
+        <update_rate>100</update_rate>
+        <contact>
+          <collision>collision</collision>
+          <topic>/factory/workpieces/contacts</topic>
+        </contact>
+      </sensor>
+    </link>
+    <plugin filename="gz-sim-pose-publisher-system"
+            name="gz::sim::systems::PosePublisher">
+      <publish_model_pose>true</publish_model_pose>
+      <publish_link_pose>true</publish_link_pose>
+      <publish_sensor_pose>false</publish_sensor_pose>
+      <publish_collision_pose>false</publish_collision_pose>
+      <publish_visual_pose>false</publish_visual_pose>
+      <use_pose_vector_msg>true</use_pose_vector_msg>
+      <update_frequency>20</update_frequency>
+    </plugin>
+  </model>
+</sdf>

@@ -1,0 +1,8 @@
+routes:
+  raw_bin_to_finished_bin:
+    # Leave the bin row through the open south transit lane.  The direct
+    # station-to-station line clips the charging dock inflation boundary.
+    waypoints:
+      - [-1.50, -1.70, 0.0]
+      - [1.50, -1.70, 0.0]
+      - [1.80, -2.70, 0.0]

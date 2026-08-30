@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="ROS 2 多机床移动机械臂本地操作台"
+    >
+    <title>移动机械臂操作台</title>
+    <link rel="stylesheet" href="/app.css">
+    <script defer src="/app.js"></script>
+  </head>
+  <body>
+    <div class="ambient-grid" aria-hidden="true"></div>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </span>
+          <div>
+            <p class="eyebrow">ROS 2 FACTORY CELL</p>
+            <h1>移动机械臂操作台</h1>
+          </div>
+        </div>
+        <div class="system-meta">
+          <span id="model-name" class="model-name">正在读取模型</span>
+          <span id="system-status" class="status-pill status-waiting">
+            <span class="status-dot"></span>
+            正在连接
+          </span>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <aside class="status-panel" aria-label="工厂实时状态">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">LIVE CELL</p>
+              <h2>工厂状态</h2>
+            </div>
+            <button
+              id="refresh-state"
+              class="icon-button"
+              type="button"
+              aria-label="查询最新工厂状态"
+              title="查询最新状态"
+            >↻</button>
+          </div>
+
+          <section class="metric-grid" aria-label="库存和电量">
+            <div class="metric">
+              <span>毛坯</span>
+              <strong id="raw-count">—</strong>
+              <small>RAW</small>
+            </div>
+            <div class="metric">
+              <span>成品</span>
+              <strong id="finished-count">—</strong>
+              <small>FINISHED</small>
+            </div>
+            <div class="metric metric-wide">
+              <div>
+                <span>机器人电量</span>
+                <strong id="battery-value">—</strong>
+              </div>
+              <div class="battery-track" aria-hidden="true">
+                <span id="battery-bar"></span>
+              </div>
+            </div>
+          </section>
+
+          <section class="machine-section">
+            <div class="subheading">
+              <h3>机床单元</h3>
+              <span>3 MACHINES</span>
+            </div>
+            <div id="machine-list" class="machine-list">
+              <div class="machine-row skeleton-row"></div>
+              <div class="machine-row skeleton-row"></div>
+              <div class="machine-row skeleton-row"></div>
+            </div>
+          </section>
+
+          <section class="safety-note">
+            <div class="safety-icon" aria-hidden="true">!</div>
+            <div>
+              <strong>确定性安全边界</strong>
+              <p>Agent 不直接控制速度、关节、主轴和急停。</p>
+            </div>
+          </section>
+        </aside>
+
+        <section class="conversation-panel" aria-label="Agent 对话">
+          <div class="conversation-heading">
+            <div>
+              <p class="section-kicker">EMBODIED AGENT</p>
+              <h2>生产操作员</h2>
+            </div>
+            <span class="bounded-label">MCP · 13 个受限工具</span>
+          </div>
+
+          <div
+            id="conversation"
+            class="conversation"
+            role="log"
+            aria-live="polite"
+            aria-label="对话记录"
+          >
+            <article class="welcome-card">
+              <p class="welcome-index">01 / CONTROL LAYER</p>
+              <h3>用自然语言管理生产，<br>运动控制仍由 ROS 2 执行。</h3>
+              <p>
+                查询三台机床、提交生产订单、控制自动模式，或根据 SOP
+                解释故障。所有实际动作都要经过 Schema 与 ROS 状态机。
+              </p>
+            </article>
+          </div>
+
+          <div class="quick-actions" aria-label="快捷指令">
+            <button type="button" data-prompt="查看机床、库存和电量">
+              查询工厂状态
+            </button>
+            <button type="button" data-prompt="只用2号机床加工2个零件">
+              提交两件订单
+            </button>
+            <button type="button" data-prompt="查看自动生产状态">
+              自动模式状态
+            </button>
+            <button type="button" data-prompt="完成当前订单后停止自动生产">
+              安全停止自动生产
+            </button>
+          </div>
+
+          <form id="chat-form" class="composer">
+            <label for="operator-input">操作员指令</label>
+            <div class="composer-row">
+              <textarea
+                id="operator-input"
+                rows="2"
+                maxlength="2000"
+                placeholder="例如：只用 1 号和 3 号机床加工三个零件"
+                required
+              ></textarea>
+              <button id="send-button" type="submit">
+                <span>发送</span>
+                <span aria-hidden="true">↗</span>
+              </button>
+            </div>
+            <p>Enter 发送 · Shift + Enter 换行</p>
+          </form>
+        </section>
+
+        <aside class="activity-panel" aria-label="Agent 执行记录">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">TRACE</p>
+              <h2>执行记录</h2>
+            </div>
+            <span id="trace-count" class="trace-count">0</span>
+          </div>
+
+          <section class="order-card">
+            <span>当前订单</span>
+            <strong id="active-order">尚未提交</strong>
+            <p id="order-detail">提交订单后将在这里保留可追踪 ID。</p>
+          </section>
+
+          <div id="tool-trace" class="tool-trace">
+            <div class="empty-trace">
+              <span aria-hidden="true">⌁</span>
+              <p>Agent 调用工具后，这里会显示参数和 ROS 接受结果。</p>
+            </div>
+          </div>
+        </aside>
+      </main>
+
+      <footer>
+        <span>LOCAL OPERATOR SURFACE</span>
+        <span>LLM → MCP → ROS 2</span>
+        <span id="clock">--:--:--</span>
+      </footer>
+    </div>
+  </body>
+</html>

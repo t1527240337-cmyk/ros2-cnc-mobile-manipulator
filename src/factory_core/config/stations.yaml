@@ -1,0 +1,31 @@
+stations:
+  raw_bin:
+    type: non_charging
+    tag_id: 10
+    staging_pose: [-2.85, -2.7, 3.14159]
+    dock_pose: [-3.85, -2.7, 3.14159]
+  finished_bin:
+    type: non_charging
+    tag_id: 11
+    staging_pose: [2.85, -2.7, 0.0]
+    dock_pose: [3.85, -2.7, 0.0]
+  machine_1:
+    type: non_charging
+    tag_id: 1
+    staging_pose: [3.8, 1.25, 1.5708]
+    dock_pose: [3.8, 1.98, 1.5708]
+  machine_2:
+    type: non_charging
+    tag_id: 2
+    staging_pose: [0.8, 1.25, 1.5708]
+    dock_pose: [0.8, 1.98, 1.5708]
+  machine_3:
+    type: non_charging
+    tag_id: 3
+    staging_pose: [-2.2, 1.25, 1.5708]
+    dock_pose: [-2.2, 1.98, 1.5708]
+  charge_dock:
+    type: charging
+    tag_id: 20
+    staging_pose: [0.0, -2.6, -1.5708]
+    dock_pose: [0.0, -3.087, -1.5708]

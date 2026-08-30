@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CycloneDDS xmlns="https://cdds.io/config">
+  <Domain id="any">
+    <General>
+      <!-- Integration tests are single-host processes. Use loopback unicast
+           so WSL/VPN interface changes cannot strand an in-flight ROS action. -->
+      <Interfaces>
+        <NetworkInterface address="127.0.0.1" multicast="false"/>
+      </Interfaces>
+      <AllowMulticast>false</AllowMulticast>
+    </General>
+    <Discovery>
+      <!-- Jazzy currently ships CycloneDDS 0.10.5. In that version an
+           explicit Peer is the portable way to enable localhost discovery. -->
+      <ParticipantIndex>auto</ParticipantIndex>
+      <MaxAutoParticipantIndex>120</MaxAutoParticipantIndex>
+      <Peers>
+        <Peer Address="127.0.0.1"/>
+      </Peers>
+    </Discovery>
+  </Domain>
+</CycloneDDS>

@@ -1,0 +1,13 @@
+laser_self_filter:
+  ros__parameters:
+    input_topic: /scan
+    output_topic: /scan_filtered
+    base_frame: base_link
+    # Remove only returns inside the chassis instead of creating a large
+    # circular blind zone around useful close-range obstacles.
+    min_x: -0.53
+    max_x: 0.53
+    min_y: -0.38
+    max_y: 0.38
+    min_z: -0.20
+    max_z: 0.30

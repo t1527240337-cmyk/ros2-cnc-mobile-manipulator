@@ -1,0 +1,17 @@
+string order_id
+# Quantity is validated against live inventory and destination capacity.
+uint32 quantity
+string[] allowed_machine_ids
+bool auto_recharge
+---
+bool success
+uint32 completed
+uint16 error_code
+string message
+---
+string phase
+string current_machine_id
+uint32 completed
+uint32 total
+float32 battery_percentage
+string detail

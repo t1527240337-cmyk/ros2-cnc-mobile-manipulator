@@ -1,0 +1,33 @@
+<root BTCPP_format="4" main_tree_to_execute="ExecutePhysicalOrder">
+  <BehaviorTree ID="ExecutePhysicalOrder">
+    <Sequence name="physical_order_workflow">
+      <InitializeOrder/>
+
+      <!--
+        One batch reserves at most one part per allowed IDLE machine. The
+        outer loop therefore preserves machining concurrency: all assigned
+        machines are loaded before their finished parts are collected.
+      -->
+      <RepeatWhile name="process_all_batches">
+        <OrderHasRemainingParts/>
+        <Sequence name="process_next_batch">
+          <PrepareNextBatch/>
+
+          <RepeatWhile name="load_every_assignment">
+            <BatchHasPendingLoads/>
+            <ExecuteNextLoad/>
+          </RepeatWhile>
+
+          <RepeatWhile name="unload_every_assignment">
+            <BatchHasPendingUnloads/>
+            <ExecuteNextUnload/>
+          </RepeatWhile>
+
+          <FinishBatch/>
+        </Sequence>
+      </RepeatWhile>
+
+      <FinalizeOrder/>
+    </Sequence>
+  </BehaviorTree>
+</root>

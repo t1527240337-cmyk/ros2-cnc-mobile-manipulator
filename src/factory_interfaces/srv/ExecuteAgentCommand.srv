@@ -1,0 +1,19 @@
+# Structured high-level command boundary shared by Web and MCP clients.
+# The server validates operation and arguments again with AgentCommand.
+string source
+string operation
+# Physical v1 factory capacity: zero for non-order commands, otherwise 1..3.
+uint32 quantity
+string[] allowed_machine_ids
+string target_machine_id
+string task_id
+bool auto_recharge
+string query
+---
+bool accepted
+string request_id
+string order_id
+string operation
+string parser
+string message
+string data_json

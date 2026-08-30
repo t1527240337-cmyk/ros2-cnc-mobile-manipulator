@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="fixture_clamp_constraints">
+    <static>true</static>
+    <self_collide>true</self_collide>
+    <link name="world_anchor"/>
+
+    <!-- A clamp attaches at the workpiece's current pose, so the same physical
+         adapter works for any CNC station without teleporting the part. -->
+    <plugin filename="gz-sim-detachable-joint-system"
+            name="gz::sim::systems::DetachableJoint">
+      <parent_link>world_anchor</parent_link>
+      <child_model>raw_part_1</child_model>
+      <child_link>part</child_link>
+      <detach_topic>/factory/fixture/raw_part_1/detach</detach_topic>
+      <attach_topic>/factory/fixture/raw_part_1/attach</attach_topic>
+      <output_topic>/factory/fixture/raw_part_1/attached</output_topic>
+    </plugin>
+    <plugin filename="gz-sim-detachable-joint-system"
+            name="gz::sim::systems::DetachableJoint">
+      <parent_link>world_anchor</parent_link>
+      <child_model>raw_part_2</child_model>
+      <child_link>part</child_link>
+      <detach_topic>/factory/fixture/raw_part_2/detach</detach_topic>
+      <attach_topic>/factory/fixture/raw_part_2/attach</attach_topic>
+      <output_topic>/factory/fixture/raw_part_2/attached</output_topic>
+    </plugin>
+    <plugin filename="gz-sim-detachable-joint-system"
+            name="gz::sim::systems::DetachableJoint">
+      <parent_link>world_anchor</parent_link>
+      <child_model>raw_part_3</child_model>
+      <child_link>part</child_link>
+      <detach_topic>/factory/fixture/raw_part_3/detach</detach_topic>
+      <attach_topic>/factory/fixture/raw_part_3/attach</attach_topic>
+      <output_topic>/factory/fixture/raw_part_3/attached</output_topic>
+    </plugin>
+    <plugin filename="gz-sim-detachable-joint-system"
+            name="gz::sim::systems::DetachableJoint">
+      <parent_link>world_anchor</parent_link>
+      <child_model>raw_part_4</child_model>
+      <child_link>part</child_link>
+      <detach_topic>/factory/fixture/raw_part_4/detach</detach_topic>
+      <attach_topic>/factory/fixture/raw_part_4/attach</attach_topic>
+      <output_topic>/factory/fixture/raw_part_4/attached</output_topic>
+    </plugin>
+    <plugin filename="gz-sim-detachable-joint-system"
+            name="gz::sim::systems::DetachableJoint">
+      <parent_link>world_anchor</parent_link>
+      <child_model>raw_part_5</child_model>
+      <child_link>part</child_link>
+      <detach_topic>/factory/fixture/raw_part_5/detach</detach_topic>
+      <attach_topic>/factory/fixture/raw_part_5/attach</attach_topic>
+      <output_topic>/factory/fixture/raw_part_5/attached</output_topic>
+    </plugin>
+    <plugin filename="gz-sim-detachable-joint-system"
+            name="gz::sim::systems::DetachableJoint">
+      <parent_link>world_anchor</parent_link>
+      <child_model>raw_part_6</child_model>
+      <child_link>part</child_link>
+      <detach_topic>/factory/fixture/raw_part_6/detach</detach_topic>
+      <attach_topic>/factory/fixture/raw_part_6/attach</attach_topic>
+      <output_topic>/factory/fixture/raw_part_6/attached</output_topic>
+    </plugin>
+  </model>
+</sdf>

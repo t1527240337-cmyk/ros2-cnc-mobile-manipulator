@@ -1,0 +1,58 @@
+entries:
+  - id: authority_boundary
+    title: Agent 权限边界
+    keywords: [权限, 安全, 急停, 速度, 关节, cmd_vel, plc]
+    text: >-
+      Agent 只能查询状态、提交/控制生产任务、请求机床进给保持和解释故障。
+      它不能控制底盘速度、机械臂关节、主轴输出或急停回路。急停必须由独立安全回路处理。
+
+  - id: state_driven_scheduling
+    title: 状态驱动调度
+    keywords: [调度, 分配, 空闲, 机床, 上下料, 派工]
+    text: >-
+      用户不指定机床时，确定性调度器读取所有机床状态并优先填充 IDLE 的健康机床；
+      PROCESSING 机床完成后进入 DONE，由机床控制器开门并发布可下料状态。
+      LLM 只表达约束，不逐台生成底层动作序列。
+
+  - id: automatic_production
+    title: 自动生产模式
+    keywords: [自动生产, 自动模式, 连续生产, 停止自动]
+    text: >-
+      自动生产只在毛坯库存、电量和空闲健康机床满足条件时提交确定性订单。
+      “停止自动生产”表示不再创建新订单，当前订单仍完成到零件归属一致的安全状态；
+      若要暂停当前运动任务，应单独使用任务暂停命令。
+
+  - id: machine_handshake
+    title: 机床上下料握手 SOP
+    keywords: [开门, 关门, 夹具, 托盘, esp32, 寄存器, 握手]
+    text: >-
+      推荐寄存器握手为：IDLE→请求开门→DOOR_OPEN→机器人装料→PART_LOADED→
+      夹具确认→关门→READY→START→PROCESSING→DONE→主轴安全停止→自动开门→
+      ROBOT_UNLOAD_ALLOWED。机器人卸料后写 PART_REMOVED，机床回到 IDLE。
+
+  - id: controlled_stop
+    title: 暂停、停止与急停
+    keywords: [暂停, 停止, 恢复, 继续, 急停, hold]
+    text: >-
+      暂停任务会在任务层冻结后续派工；机床 HOLD 是受控进给保持并保留剩余加工时间；
+      CANCEL 取消订单并保存检查点。任何涉及人员风险的情况必须使用硬件急停，Agent 无权触发或复位急停。
+
+  - id: battery_policy
+    title: 电量策略
+    keywords: [电池, 电量, 充电, docking, 回充]
+    text: >-
+      电量低于 25% 时不再拿取新零件；若手持零件先放到安全位置，再 docking。
+      充至 80% 后从检查点恢复。该策略由任务执行器决定，不由 LLM 临时修改阈值。
+
+  - id: fault_recovery
+    title: 故障恢复
+    keywords: [故障, 报警, fault, 恢复, 人工]
+    text: >-
+      空机故障可隔离并改派其他机床。若故障机床内锁有零件，任务必须阻塞并报告人工介入；
+      禁止 Agent 绕过门锁、夹具确认或故障复位条件。
+
+  - id: fault_99
+    title: 仿真故障码 99
+    keywords: [99, 注入故障, 测试故障]
+    text: >-
+      故障码 99 是仿真注入故障。确认机床内无零件后才允许 RESET；若有零件则保持隔离并人工处理。
