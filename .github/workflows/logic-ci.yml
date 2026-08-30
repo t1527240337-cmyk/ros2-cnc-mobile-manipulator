@@ -11,14 +11,15 @@ jobs:
   unit-tests:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
-    container:
-      image: ghcr.io/ros-tooling/setup-ros-docker/setup-ros-docker-ubuntu-noble-ros-jazzy-ros-base
     steps:
       - uses: actions/checkout@v6
+      - name: Install ROS 2 Jazzy tooling
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: jazzy
       - name: Install declared workspace dependencies
         shell: bash
         run: |
-          apt-get update
           rosdep update
           rosdep install \
             --from-paths src \
@@ -26,8 +27,8 @@ jobs:
             --rosdistro jazzy \
             -r \
             -y
-          apt-get install -y --no-install-recommends python3-pytest
-          rm -rf /var/lib/apt/lists/*
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends python3-pytest
       - name: Build and run repository checks
         shell: bash
         run: bash scripts/run_checks.sh
